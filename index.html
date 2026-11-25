@@ -246,6 +246,31 @@ body[data-mode="answer"] h1{font-size:1.25rem}
 .phone{color:var(--fg)}
 .screenStage .stage{max-width:calc((100vh - 290px)*1.2)}
 @media (min-width:1001px){.side{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+/* 声カード（スクリーン） */
+.lcard{position:absolute;left:4%;right:4%;bottom:4%;z-index:5;background:linear-gradient(160deg,rgba(20,12,52,.96),rgba(42,22,64,.96));border:2px solid var(--c);border-radius:18px;padding:16px 18px 14px;color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 40px -6px var(--c),0 20px 50px -10px rgba(0,0,0,.7);display:flex;flex-direction:column;gap:8px;animation:cardin .35s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes cardin{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:none}}
+.lcard .lx{position:absolute;top:6px;right:8px;width:44px;height:44px;border:0;background:transparent;color:#cdbbe8;font-size:1.6rem;line-height:1;cursor:pointer}
+.lcard .lmeta{font-size:.82rem;color:#cdbbe8;padding-right:40px}
+.lcard .ltext{font-size:clamp(1.15rem,2.6vw,1.9rem);font-weight:700;line-height:1.45;text-shadow:0 0 14px var(--c)}
+.lcard .lstage{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:.9rem;color:#f4e9ff}
+.lcard .lstage b{font-size:1.25rem;color:#ffd6e8;font-variant-numeric:tabular-nums}
+.lcard .lerr{color:#ffb0b0}
+.lcard .lwk{align-self:stretch;min-height:56px;border:0;border-radius:999px;font-size:1.25rem;font-weight:700;letter-spacing:.1em;color:#2a1240;background:linear-gradient(90deg,#ffd6e8,#ff9ecb 50%,#ffd25a);box-shadow:0 0 24px rgba(255,158,203,.55);cursor:pointer;transition:transform .1s}
+.lcard .lwk:active{transform:scale(.97)}
+.lcard .lwk:disabled{background:#3a2f66;color:#cdbbe8;box-shadow:none}
+.poplist{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.poplist li{display:flex;align-items:center;gap:10px;cursor:pointer;padding:4px 6px;border-radius:8px}
+.poplist li:hover{background:rgba(255,255,255,.06)}
+.poplist li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.poplist li b{color:#ffd6e8;font-variant-numeric:tabular-nums;white-space:nowrap}
+.poplist .rk{font-style:normal;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-family:'Dela Gothic One',sans-serif;font-size:.8rem;color:#2a1240;flex:none}
+.rk.r1{background:#ffd25a}.rk.r2{background:#e6ecf5}.rk.r3{background:#f0a868}
+.spinslow{animation:spinslow 24s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spinslow{to{rotate:360deg}}
+.halo{animation:halo 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes halo{50%{opacity:.55;scale:1.12}}
+@media (prefers-reduced-motion:reduce){.spinslow,.halo,.lcard{animation:none}}
+.blabel-g,#attract{pointer-events:none}
 </style></head><body>
 <div class="wrap">
   <header class="top">
@@ -344,6 +369,7 @@ function aggregate(){
     (s.vI||[]).forEach(id=>{get(A.v,id).imp++});
     (s.bI||[]).forEach(id=>{get(A.b,id).imp++});
   });
+  voices.forEach(v=>{if(v.taps){const x=get(A.v,v.id);x.total+=v.taps;x.taps=v.taps}});
   A.vOf=id=>A.v[id]||{creator:0,citizen:0,both:0,total:0,imp:0};
   A.bOf=id=>A.b[id]||{creator:0,citizen:0,both:0,total:0,imp:0};
   agg=A;return A;
@@ -554,6 +580,7 @@ function drawTree(){
   <filter id="glowBig" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   <filter id="soft"><feGaussianBlur stdDeviation="10"/></filter>
   <linearGradient id="textG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#fff4c8"/><stop offset="1" stop-color="#ffc98a"/></linearGradient>`;
+  ensureFlowerDefs(defs);computeRanks(A);nextBloom={};
   G.forEach((g,i)=>{defs.insertAdjacentHTML('beforeend',`<radialGradient id="lf${i}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset=".25" stop-color="${g.color}"/><stop offset="1" stop-color="${g.color}" stop-opacity=".75"/></radialGradient><radialGradient id="cn${i}" cx=".4" cy=".35" r=".65"><stop offset="0" stop-color="${g.color}" stop-opacity=".5"/><stop offset=".7" stop-color="${g.color}" stop-opacity=".22"/><stop offset="1" stop-color="${g.color}" stop-opacity="0"/></radialGradient>`)});
   /* 地面の光 */
   el('ellipse',{cx:300,cy:470,rx:190,ry:22,fill:'#ffd59a',opacity:.18,filter:'url(#soft)'},svg);
@@ -605,18 +632,17 @@ function drawTree(){
       const flut=el('g',{class:'flutter'},gl);const fp=2.4+hash(v.id+'f')*2;flut.style.animationDuration=fp+'s';flut.style.animationDelay=phase(fp);
       if(likes>0)el('circle',{r:(size*.9).toFixed(1),fill:g.color,opacity:Math.min(.55,.15+likes*.05).toFixed(2),filter:'url(#soft)'},flut);
       const rot=((ang*57.3)+40)%360;
-      el('path',{d:'M0,-1 C0.62,-0.55 0.62,0.55 0,1 C-0.62,0.55 -0.62,-0.55 0,-1Z',fill:`url(#lf${i})`,stroke:'rgba(255,255,255,.55)','stroke-width':.05,transform:`rotate(${rot.toFixed(0)}) scale(${size.toFixed(1)})`},flut);
-      el('path',{d:'M0,-.85 L0,.85',stroke:'rgba(255,255,255,.55)','stroke-width':.04,transform:`rotate(${rot.toFixed(0)}) scale(${size.toFixed(1)})`},flut);
+      drawVoiceMark(flut,v,likes,size,rot,i,g.color,lx,ly);
       if(v.role==='creator'||v.role==='both')el('circle',{r:2.8,fill:'#ff9ecb',stroke:'#fff','stroke-width':1,filter:'url(#glow)'},flut);
-      const show=()=>{sel=v.id;caption(v);drawTree();burst(lx,ly,g.color,10,1.6)};
+      const show=()=>{sel=v.id;caption(v);openCard(v,g.color);drawTree();burst(lx,ly,g.color,10,1.6)};
       gl.addEventListener('click',show);gl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();show()}});
       if(isNew&&prevLeafIds)setTimeout(()=>burst(lx,ly,g.color,30,3.6),300);
       if(justLiked===v.id){burst(lx,ly,'#ffd6e8',18,2.6);floatText(lx,ly,'わかる＋1','#ffd6e8')}
     });
     /* 枝の名前：わかるが多いほど大きく光る */
-    const fs=Math.min(30,14+2.6*Math.sqrt(tot));
+    const nm=g.name.length>12?g.name.slice(0,12)+'…':g.name;const fs=Math.min(19,14+.6*Math.sqrt(tot),250/nm.length);
     const ly=ey<top[1]-150?ey-36-fs*.2:ey+42+fs*.3;
-    const tx=Math.min(548,Math.max(52,ex)), ty=Math.min(488,Math.max(22,ly));
+    const hw=fs*nm.length/2+6;const tx=Math.min(600-hw,Math.max(hw,ex)), ty=Math.min(488,Math.max(22,ly));
     branchPos[g.id]={x:ex,y:ey,color:g.color};
     const lg=el('g',{class:'blabel-g'},lab);
     const t0=el('text',{x:tx.toFixed(1),y:ty.toFixed(1),'text-anchor':'middle',fill:g.color,'font-size':fs.toFixed(1),'font-weight':700,filter:'url(#glowBig)',opacity:.85,'font-family':'Zen Kaku Gothic New, sans-serif'},lg);
@@ -624,7 +650,7 @@ function drawTree(){
     t0.textContent=t.textContent=g.name.length>12?g.name.slice(0,12)+'…':g.name;
     if(justLikedBranch===g.id){burst(ex,ey,g.color,26,3);lg.classList.add('pulse','anim');floatText(ex,ey,'わかる＋1','#fff4c8')}
   });
-  prevLeafIds=ids;
+  prevLeafIds=ids;prevBloom=nextBloom;raiseFlowers();updCard();
   el('g',{id:'attract'},svg);
   /* 新しい声の演出（アニメのカットイン風） */
   if(bloomQ.length){
@@ -666,7 +692,7 @@ function drawTree(){
   const lgd=stage.querySelector('#legend');lgd.innerHTML='';
   G.forEach(g=>{const s=mk('span');s.append(mk('i',{class:'dot',style:`background:${g.color};box-shadow:0 0 8px ${g.color}`}),document.createTextNode(g.name));lgd.appendChild(s)});
   const s2=mk('span');s2.append(mk('i',{class:'dot',style:'background:#ff9ecb;box-shadow:0 0 8px #ff9ecb'}),document.createTextNode('クリエイターの声'));lgd.appendChild(s2);
-  lgd.appendChild(mk('span',{},'葉の大きさと光＝わかるの数'));
+  lgd.appendChild(mk('span',{},'「わかる」が集まると　葉→つぼみ→花→満開'));
   if(!sel)caption(null);
   hud();
   attract(true);
@@ -708,7 +734,7 @@ function floatText(x,y,text,color){
 }
 function caption(v){
   const c=stage.querySelector('#caption');if(!c)return;c.innerHTML='';
-  if(!v){c.append(mk('small',{},'葉に触れると声が読めます'),mk('div',{},'葉が大きく光っているほど、たくさんの人が「わかる」と言った声です。'));return}
+  if(!v){popularCaption(c);return}
   const g=groups().find(g=>g.id===branchIdOf(v));
   c.append(mk('small',{},`${g?g.name:''} ／ ${ROLE_N[v.role]||''}の声 ／ ${v.no||''}`),mk('div',{},`「${v.text}」 わかる ${(agg||aggregate()).vOf(v.id).total}`));
 }
@@ -754,10 +780,10 @@ async function rpc(fn,args){const r=await fetch(API+'/rest/v1/rpc/'+fn,{method:'
 let lastOk=0, loadedOnce=false;
 async function pull(){
   try{
-    const [c,b,v,s]=await Promise.all([rest('kn_config?select=*'),rest('kn_branches?select=*&order=ord'),rest('kn_voices?select=n,text,branch,role,age,area,act,via,sid,hidden,created_at&order=n'),rest('kn_sessions?select=sid,role,via,started_at,va,ba,vi,bi,posted')]);
+    const [c,b,v,s]=await Promise.all([rest('kn_config?select=*'),rest('kn_branches?select=*&order=ord'),rest('kn_voices?select=*&order=n'),rest('kn_sessions?select=sid,role,via,started_at,va,ba,vi,bi,posted')]);
     if(c[0])cfg={...DEFAULT_CFG,question:c[0].question,note:c[0].note,ng:c[0].ng||[]};
     branches=b.map(x=>({id:x.id,name:x.name,order:x.ord}));
-    voices=v.map(x=>({id:'v'+x.n,n:x.n,no:'こえ-'+x.n,text:x.text,branch:x.branch,role:x.role,age:x.age,area:x.area,act:x.act,via:x.via,sid:x.sid,hidden:x.hidden,at:Date.parse(x.created_at),sample:/^sample/.test(x.sid)}));
+    voices=v.map(x=>({id:'v'+x.n,n:x.n,no:'こえ-'+x.n,text:x.text,branch:x.branch,role:x.role,age:x.age,area:x.area,act:x.act,via:x.via,sid:x.sid,hidden:x.hidden,at:Date.parse(x.created_at),sample:x.sample===true||/^sample/.test(x.sid),taps:x.taps||0}));
     sessions=s.map(x=>({id:x.sid,role:x.role,via:x.via,at:Date.parse(x.started_at),vA:x.va||[],bA:x.ba||[],vI:x.vi||[],bI:x.bi||[],posted:x.posted?('v'+x.posted):null,sample:/^sample/.test(x.sid)}));
     if(knownVoiceIds===null)knownVoiceIds=new Set(voices.map(v=>v.id));
     else voices.forEach(v=>{if(!knownVoiceIds.has(v.id)){knownVoiceIds.add(v.id);justAdded.add(v.id);if(!mySids.has(v.sid)&&!v.hidden)bloomQ.push({text:v.text,role:v.role})}});
@@ -815,6 +841,113 @@ function saveAttrs(){
   if(!m.n)return;
   const sid=cur.sid,args={p_n:m.n,p_sid:sid,p_age:m.age||null,p_area:m.area||null,p_act:m.act||null};
   attrChain=attrChain.then(()=>rpc('kn_set_attrs',args)).catch(()=>{});
+}
+/* ============ 葉→つぼみ→花→満開、スクリーンでの声カードと「わかる」 ============ */
+const BLOOM=[{at:0,n:'葉'},{at:6,n:'つぼみ'},{at:10,n:'花'},{at:16,n:'満開'}];
+function bloomOf(likes){let i=0;while(i+1<BLOOM.length&&likes>=BLOOM[i+1].at)i++;return i}
+let prevBloom=null, rankOf={};
+function computeRanks(A){
+  rankOf={};
+  const vs=visibleVoices().map(v=>[v.id,A.vOf(v.id).total]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+  vs.slice(0,3).forEach(([id],i)=>rankOf[id]=i+1);
+  return vs;
+}
+const SAKURA='M0,0 C-0.38,-0.22 -0.5,-0.72 -0.22,-1 L0,-0.86 L0.22,-1 C0.5,-0.72 0.38,-0.22 0,0Z';
+function ensureFlowerDefs(defs){
+  defs.insertAdjacentHTML('beforeend',`<linearGradient id="petalG" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff6fa6"/><stop offset=".45" stop-color="#ffb3cf"/><stop offset="1" stop-color="#fff5f9"/></linearGradient>
+  <radialGradient id="budG" cx=".4" cy=".3" r=".8"><stop offset="0" stop-color="#fff0f6"/><stop offset=".6" stop-color="#ff9cc2"/><stop offset="1" stop-color="#e2558c"/></radialGradient>
+  <radialGradient id="haloG"><stop offset="0" stop-color="#fff4c8" stop-opacity=".9"/><stop offset=".5" stop-color="#ffb3cf" stop-opacity=".35"/><stop offset="1" stop-color="#ffb3cf" stop-opacity="0"/></radialGradient>`);
+}
+function drawFlower(parent,size,stage,color,rot){
+  const s=stage===3?size*1.4:size*1.15;
+  if(stage===3){el('circle',{r:(s*1.7).toFixed(1),fill:'url(#haloG)',class:'halo'},parent)}
+  const fl=el('g',{class:stage===3?'spinslow':'',transform:`rotate(${rot.toFixed(0)})`},parent);
+  const layers=stage===3?[[1,0],[.72,36]]:[[1,0]];
+  layers.forEach(([k,off])=>{for(let p=0;p<5;p++)el('path',{d:SAKURA,fill:'url(#petalG)',stroke:'rgba(255,255,255,.7)','stroke-width':.03,transform:`rotate(${p*72+off}) scale(${(s*k).toFixed(1)})`},fl)});
+  for(let p=0;p<8;p++){const a=p/8*Math.PI*2,r=s*.32;el('line',{x1:0,y1:0,x2:(Math.cos(a)*r).toFixed(1),y2:(Math.sin(a)*r).toFixed(1),stroke:'#ffe08a','stroke-width':.9},fl);
+    el('circle',{cx:(Math.cos(a)*r).toFixed(1),cy:(Math.sin(a)*r).toFixed(1),r:1.4,fill:'#ffd25a'},fl)}
+  el('circle',{r:(s*.16).toFixed(1),fill:color,stroke:'#fff','stroke-width':1},fl);
+}
+function drawBud(parent,size,rot,i){
+  el('path',{d:'M0,-1 C0.62,-0.55 0.62,0.55 0,1 C-0.62,0.55 -0.62,-0.55 0,-1Z',fill:`url(#lf${i})`,transform:`rotate(${rot.toFixed(0)}) scale(${(size*.85).toFixed(1)})`},parent);
+  const b=el('g',{transform:`translate(0,${(-size*.35).toFixed(1)})`},parent);
+  el('ellipse',{rx:(size*.38).toFixed(1),ry:(size*.5).toFixed(1),fill:'url(#budG)',stroke:'#fff','stroke-width':.8},b);
+  el('path',{d:`M${(-size*.4).toFixed(1)},${(size*.25).toFixed(1)} Q0,${(size*.05).toFixed(1)} ${(size*.4).toFixed(1)},${(size*.25).toFixed(1)} Q0,${(size*.6).toFixed(1)} ${(-size*.4).toFixed(1)},${(size*.25).toFixed(1)}Z`,fill:'#4caf6e'},b);
+}
+function drawRank(parent,size,rank){
+  const c=['#ffd25a','#e6ecf5','#f0a868'][rank-1];
+  const g=el('g',{transform:`translate(${(size*.95).toFixed(1)},${(-size*.95).toFixed(1)})`},parent);
+  el('circle',{r:9,fill:c,stroke:'#2a1240','stroke-width':1.6,filter:'url(#glow)'},g);
+  el('text',{y:4.2,'text-anchor':'middle','font-size':12,fill:'#2a1240','font-family':'Dela Gothic One, sans-serif'},g).textContent=rank;
+}
+/* 葉の描き分け（drawTree から呼ぶ） */
+function drawVoiceMark(flut,v,likes,size,rot,i,color,lx,ly){
+  const st=bloomOf(likes);
+  if(st===0){
+    el('path',{d:'M0,-1 C0.62,-0.55 0.62,0.55 0,1 C-0.62,0.55 -0.62,-0.55 0,-1Z',fill:`url(#lf${i})`,stroke:'rgba(255,255,255,.55)','stroke-width':.05,transform:`rotate(${rot.toFixed(0)}) scale(${size.toFixed(1)})`},flut);
+    el('path',{d:'M0,-.85 L0,.85',stroke:'rgba(255,255,255,.55)','stroke-width':.04,transform:`rotate(${rot.toFixed(0)}) scale(${size.toFixed(1)})`},flut);
+  }else if(st===1)drawBud(flut,size,rot,i);
+  else drawFlower(flut,size,st,color,rot);
+  if(rankOf[v.id])drawRank(flut,size*(st===3?1.4:st===2?1.15:1),rankOf[v.id]);
+  if(st>=1||rankOf[v.id])raiseQ.push({o:flut.parentNode.parentNode,likes});
+  if(prevBloom&&prevBloom[v.id]!==undefined&&st>prevBloom[v.id]){
+    setTimeout(()=>{burst(lx,ly,'#ffb3cf',st===3?50:30,st===3?4.5:3.4);floatText(lx,ly-10,st===3?'満開！':st===2?'花がさいた！':'つぼみがついた','#ffd6e8')},350);
+  }
+  nextBloom[v.id]=st;
+}
+let nextBloom={}, raiseQ=[];
+function raiseFlowers(){raiseQ.sort((a,b)=>a.likes-b.likes).forEach(x=>x.o.parentNode&&x.o.parentNode.appendChild(x.o));raiseQ=[]}
+
+/* ===== 声カード（スクリーンで葉に触れたとき） ===== */
+let card=null, cardV=null, cardTimer=null, tapCool={};
+function openCard(v,color){
+  closeCard(true);
+  const scene=stage.querySelector('#scene');if(!scene)return;
+  cardV=v.id;
+  card=mk('div',{class:'lcard anim',role:'dialog','aria-label':'声の中身'});card.style.setProperty('--c',color);
+  const x=mk('button',{class:'lx','aria-label':'閉じる'},'×');x.onclick=()=>closeCard();
+  card.append(x,mk('div',{class:'lmeta'}),mk('div',{class:'ltext'}),mk('div',{class:'lstage'}));
+  const btn=mk('button',{class:'lwk'});btn.onclick=()=>tapAgree(v.id,btn);
+  card.append(btn);
+  scene.appendChild(card);
+  updCard();armCard();
+}
+function armCard(){clearTimeout(cardTimer);cardTimer=setTimeout(()=>closeCard(),20000)}
+function closeCard(silent){
+  clearTimeout(cardTimer);if(card)card.remove();card=null;cardV=null;
+  if(!silent){sel=null;caption(null);drawTree()}
+}
+function updCard(){
+  if(!card)return;
+  const v=voices.find(x=>x.id===cardV);if(!v||v.hidden){closeCard();return}
+  const A=agg||aggregate();const likes=A.vOf(v.id).total;const st=bloomOf(likes);
+  const g=groups().find(g=>g.id===branchIdOf(v));
+  card.querySelector('.lmeta').textContent=`${g?g.name:''}　｜　${ROLE_N[v.role]||''}の声　｜　${v.no||''}`;
+  card.querySelector('.ltext').textContent=`「${v.text}」`;
+  const nx=BLOOM[st+1];
+  card.querySelector('.lstage').innerHTML='';
+  card.querySelector('.lstage').append(mk('b',{},`わかる ${likes}`),mk('span',{},`いまは「${BLOOM[st].n}」`+(nx?`。あと${nx.at-likes}で「${nx.n}」に`:'。いちばん大きく咲いています')+(rankOf[v.id]?`　｜　人気 ${rankOf[v.id]}位`:'')));
+  const btn=card.querySelector('.lwk');const cool=tapCool[v.id]&&Date.now()-tapCool[v.id]<6000;
+  btn.disabled=!!cool;btn.textContent=cool?'わかる、届きました':'わかる！';
+}
+async function tapAgree(id,btn){
+  const v=voices.find(x=>x.id===id);if(!v)return;
+  tapCool[id]=Date.now();armCard();
+  v.taps=(v.taps||0)+1;justLiked=id;aggregate();drawTree();updCard();
+  setTimeout(updCard,6100);
+  try{await rpc('kn_tap',{p_n:v.n})}catch(e){v.taps--;aggregate();drawTree();updCard();
+    if(card){card.querySelector('.lstage').append(mk('span',{class:'lerr'},'　いま送れませんでした'))}}
+}
+
+/* 何も選んでいないときの下の欄：いま人気の声 */
+function popularCaption(c){
+  const A=agg||aggregate();const top=computeRanks(A).slice(0,3);
+  if(!top.length){c.append(mk('small',{},'葉に触れると声が読めます'),mk('div',{},'「わかる」が集まった声は、つぼみ、花、満開へと咲いていきます。'));return}
+  c.append(mk('small',{},'いま人気の声（葉や花に触れると読めて、「わかる」を押せます）'));
+  const ol=mk('ol',{class:'poplist'});
+  top.forEach(([id,n],i)=>{const v=voices.find(x=>x.id===id);const li=mk('li');li.append(mk('i',{class:'rk r'+(i+1)},String(i+1)),mk('span',{},`「${v.text}」`),mk('b',{},`わかる ${n}`));
+    li.onclick=()=>{const g=groups().find(g=>g.id===branchIdOf(v));sel=v.id;openCard(v,g?g.color:'#ffd9a0');drawTree()};ol.append(li)});
+  c.append(ol);
 }
 let sessionDone=false;
 function domSpark(btn){
@@ -986,7 +1119,7 @@ function renderAdmin(){
   const A=aggregate();
   /* 状況 */
   const ss=sessions;const posted=ss.filter(s=>s.posted).length;
-  const agrees=ss.reduce((s,x)=>s+(x.vA||[]).length+(x.bA||[]).length,0);
+  const agrees=ss.reduce((s,x)=>s+(x.vA||[]).length+(x.bA||[]).length,0)+voices.reduce((s,v)=>s+(v.taps||0),0);
   const p1=mk('div',{class:'panel'});p1.append(mk('h2',{},'いまの状況'));
   const k=mk('div',{class:'kpis'});
   [[ss.length,'参加した人'],[ss.filter(s=>s.via==='qr').length,'うちQRから'],[ss.filter(s=>s.via==='touch').length,'うちタッチ画面から'],[posted,'声を足した人'],[voices.length,'声（非表示含む）'],[agrees,'押された「わかる」'],
