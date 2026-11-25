@@ -1,0 +1,1061 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>声の木 体験版</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#eef2f0; --surface:#ffffff; --fg:#1d2a33; --muted:#5d6b73; --line:#d3dcd8;
+  --accent:#27507f; --accent-fg:#ffffff; --soft:#e3ebf3; --warn:#b4432f; --ok:#2f7d4f;
+  --trunk:#7a5a40; --creator:#e8659a;
+  --stage:#0f1c33; --stage-fg:#e8eef7; --stage-muted:#9fb0c8; --stage-line:#24365a;
+  --display:"Dela Gothic One","Zen Kaku Gothic New","Hiragino Sans",sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111821; --surface:#18222d; --fg:#e4ebf0; --muted:#9aa9b3; --line:#2a3846;
+  --accent:#7fa8db; --accent-fg:#0d1622; --soft:#1f2e40; --warn:#e57a63; --ok:#6cc08f; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#111821; --surface:#18222d; --fg:#e4ebf0; --muted:#9aa9b3; --line:#2a3846;
+  --accent:#7fa8db; --accent-fg:#0d1622; --soft:#1f2e40; --warn:#e57a63; --ok:#6cc08f; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.6}
+.wrap{max-width:1180px;margin:0 auto;padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;justify-content:space-between}
+h1{font-family:var(--display);font-weight:400;font-size:1.5rem;margin:0;letter-spacing:.04em}
+.sub{color:var(--muted);font-size:.82rem;margin:0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,.leaf:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.tab{border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:6px 14px;border-radius:999px}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.banner{font-size:.85rem;border-radius:10px;padding:10px 14px;margin:0;background:var(--soft)}
+.banner.warn{background:color-mix(in srgb,var(--warn) 14%,var(--surface));color:var(--fg)}
+.booth{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
+@media (max-width:900px){.booth{grid-template-columns:minmax(0,1fr)}.booth .stagebox{order:2}}
+.stage{background:var(--stage);color:var(--stage-fg);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.stage-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+.stage-title{font-family:var(--display);font-size:1.2rem;letter-spacing:.06em}
+.stage-q{font-size:.9rem;color:var(--stage-fg);margin:0}
+.stage-count{color:var(--stage-muted);font-size:.85rem;font-variant-numeric:tabular-nums}
+svg.tree{width:100%;height:auto;display:block}
+.leaf{cursor:pointer}
+.leaf path{stroke:rgba(0,0,0,.25);stroke-width:.06}
+.leaf.sel path{stroke:#fff;stroke-width:.16}
+.anim{transform-box:fill-box;transform-origin:center}
+@keyframes sprout{from{transform:scale(0)}to{transform:scale(1)}}
+.sprout{animation:sprout .8s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+.pulse{animation:pulse .6s ease-out}
+@keyframes bloom{0%{opacity:0;transform:scale(.4)}12%{opacity:1;transform:scale(1.06)}20%{transform:scale(1)}82%{opacity:1}100%{opacity:0;transform:translateY(-30px)}}
+.bloom{animation:bloom 4.2s ease-in-out both}
+@keyframes fade{0%{opacity:0}15%{opacity:1}82%{opacity:1}100%{opacity:0}}
+.fade{animation:fade 4.2s ease-in-out both}
+@keyframes attractIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.attract-in{animation:attractIn .6s ease-out both}
+.blabel{transition:font-size .6s ease}
+@media (prefers-reduced-motion:reduce){.sprout,.pulse,.bloom,.fade,.attract-in{animation:none}.blabel{transition:none}}
+.caption{min-height:3.2em;border-top:1px solid var(--stage-line);padding-top:10px;font-size:.95rem}
+.caption small{display:block;color:var(--stage-muted);font-size:.78rem}
+.legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:.8rem;color:var(--stage-muted)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.phone{background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:18px 16px 20px;min-height:520px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.phone-top{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)}
+.steps{display:flex;gap:4px}
+.steps span{flex:1;height:4px;border-radius:2px;background:var(--line)}
+.steps span.on{background:var(--accent)}
+#flow{display:flex;flex-direction:column;gap:12px}
+.phone h2{font-size:1.1rem;margin:0;text-wrap:balance}
+.phone p{margin:0}
+.muted{color:var(--muted);font-size:.85rem}
+.primary{background:var(--accent);color:var(--accent-fg);border:0;border-radius:12px;padding:12px 16px;font-weight:700;width:100%}
+.primary:disabled{opacity:.45;cursor:not-allowed}
+.secondary{background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:8px 14px;font-weight:700}
+.link{background:none;border:0;color:var(--accent);text-decoration:underline;padding:4px 0;font-size:.88rem;align-self:flex-start}
+.voice{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:center}
+.voice .txt{flex:1;min-width:0;font-size:.92rem;overflow-wrap:anywhere}
+.voice .tag{display:block;font-size:.72rem;color:var(--muted)}
+.voice .txt b{display:block}
+.agree{border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:999px;padding:6px 12px;font-weight:700;white-space:nowrap;font-size:.85rem}
+.agree[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.chips{display:flex;flex-direction:column;gap:6px}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:10px 12px;text-align:left;font-size:.92rem}
+.row .chip{padding:6px 10px;border-radius:999px;font-size:.85rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--soft);font-weight:700}
+.q-label{font-size:.85rem;font-weight:700}
+.q-label span{font-weight:400;color:var(--muted);font-size:.78rem}
+textarea,input[type=text],input[type=search],select{font:inherit;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg);color:var(--fg);max-width:100%}
+textarea{width:100%;resize:vertical;min-height:84px}
+.count{text-align:right;font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.err{color:var(--warn);font-size:.85rem}
+.okmsg{color:var(--ok);font-size:.85rem}
+.card{border-radius:14px;background:var(--soft);padding:14px;display:flex;gap:12px;align-items:center}
+.num{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--surface);border-radius:10px;padding:8px 12px;flex:none}
+.num small{font-size:.7rem;color:var(--muted)}
+.num b{font-size:1.2rem;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+/* 待機画面 */
+.idlewrap{display:flex;flex-direction:column;gap:12px}
+/* 声の木サイト */
+.site{display:flex;justify-content:center}
+.sitebox{width:100%;max-width:440px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px 16px;display:flex;flex-direction:column;gap:14px}
+.sitebox h2{font-size:1.1rem;margin:0}
+.big{font-size:2.4rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.mini{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:.9rem}
+.mini ul{margin:6px 0 0;padding-left:1.1em}
+.lookup{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.lookup input{flex:1;min-width:8em}
+/* 管理 */
+.admin{display:flex;flex-direction:column;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel h2{font-size:1.05rem;margin:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--bg);border-radius:12px;padding:10px 12px}
+.kpi b{display:block;font-size:1.4rem;font-variant-numeric:tabular-nums}
+.kpi span{font-size:.78rem;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:700;color:var(--muted);font-size:.78rem;white-space:nowrap}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.hid td{opacity:.5}
+.brow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.brow input{flex:1;min-width:10em}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.85rem}
+/* ===== ビジュアル強化 ===== */
+.stage{background:linear-gradient(160deg,#120a2e,#1d1246 60%,#2a1640);border:1px solid rgba(255,217,160,.25);box-shadow:0 18px 50px -18px rgba(40,10,80,.6),inset 0 0 0 1px rgba(255,255,255,.04)}
+.stage-title{background:linear-gradient(90deg,#fff,#ffd9a0 60%,#ff9ecb);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px rgba(255,190,140,.35))}
+.stage-q{color:#f4e9ff}
+.stage-count{color:#cdbbe8}
+.scene{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:600/500;box-shadow:inset 0 0 60px rgba(0,0,0,.5)}
+.scene svg,.scene canvas{position:absolute;inset:0;width:100%;height:100%}
+.scene canvas,.scene svg.cut{pointer-events:none}
+#view-idle .stage{width:100%;max-width:calc((100vh - 150px)*1.2);margin:0 auto}
+.legend{color:#cdbbe8}
+.caption{border-top-color:rgba(255,217,160,.2)}
+.caption small{color:#cdbbe8}
+.star{animation:twk 4s ease-in-out infinite}
+@keyframes twk{0%,100%{opacity:.25}50%{opacity:1}}
+.twinkle{animation:twk2 4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes twk2{0%,100%{opacity:.3;transform:scale(.6) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(45deg)}}
+.rays{animation:rays 9s ease-in-out infinite}
+@keyframes rays{0%,100%{opacity:.5}50%{opacity:1}}
+.sway{animation:sway 6s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-.9deg)}50%{transform:rotate(.9deg)}}
+.flutter{animation:flut 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes flut{0%,100%{transform:rotate(-6deg) scale(1)}50%{transform:rotate(6deg) scale(1.04)}}
+.leaf:hover .flutter{filter:brightness(1.3)}
+.sprout{animation:sprout2 1.1s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes sprout2{0%{transform:scale(0) rotate(-90deg);opacity:0}60%{opacity:1}100%{transform:scale(1) rotate(0)}}
+.pulse{animation:pulse2 .7s ease-out}
+@keyframes pulse2{0%{transform:scale(1)}35%{transform:scale(1.55)}100%{transform:scale(1)}}
+.cutin{animation:life 4.6s linear both}
+@keyframes life{0%,96%{opacity:1}100%{opacity:0}}
+.cutin .fade{animation:fade2 4.6s ease-in-out both}
+@keyframes fade2{0%{opacity:0}8%{opacity:.78}85%{opacity:.78}100%{opacity:0}}
+.flash{animation:flash .45s ease-out both}
+@keyframes flash{0%{opacity:0}12%{opacity:.85}100%{opacity:0}}
+.speed{animation:speed 4.6s ease-out both;transform-origin:300px 240px}
+@keyframes speed{0%{opacity:0;transform:scale(1.4)}8%{opacity:1;transform:scale(1)}30%{opacity:.7}70%{opacity:.35}100%{opacity:0;transform:scale(.96) rotate(3deg)}}
+.ring{animation:ring 1.3s cubic-bezier(.1,.6,.3,1) both;transform-box:fill-box;transform-origin:center}
+@keyframes ring{0%{transform:scale(.2);opacity:1;stroke-width:8}100%{transform:scale(4.5);opacity:0;stroke-width:.5}}
+.band{animation:band 4.6s cubic-bezier(.2,.9,.3,1) both}
+@keyframes band{0%{transform:translateX(-640px)}10%{transform:translateX(0)}86%{transform:translateX(0);opacity:1}100%{transform:translateX(640px);opacity:0}}
+.pop{animation:pop 4.6s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes pop{0%{opacity:0;transform:scale(2.2)}9%{opacity:1;transform:scale(.94)}13%{transform:scale(1.04) translate(2px,-1px)}15%{transform:scale(1) translate(-2px,1px)}17%{transform:scale(1)}86%{opacity:1;transform:scale(1.03)}100%{opacity:0;transform:scale(.7) translateY(-80px)}}
+@media (prefers-reduced-motion:reduce){.star,.twinkle,.rays,.sway,.flutter,.sprout,.pulse,.speed,.ring,.band,.pop,.flash{animation:none}.cutin{animation:life 3s linear both}}
+.kasumi{animation:kasumi 26s ease-in-out infinite}.kasumi.k2{animation-duration:34s;animation-direction:reverse}
+@keyframes kasumi{0%,100%{transform:translateX(-14px)}50%{transform:translateX(14px)}}
+.win{animation:twk 5s ease-in-out infinite}
+.stamp{animation:stamp 4.6s cubic-bezier(.2,1.6,.4,1) both;transform-box:fill-box;transform-origin:center}
+@keyframes stamp{0%,18%{opacity:0;transform:scale(3)}24%{opacity:1;transform:scale(.9)}28%{transform:scale(1)}86%{opacity:1}100%{opacity:0}}
+.spin{animation:spin 4.6s linear both;transform-origin:300px 230px}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(40deg)}}
+.floatup{animation:floatup 1.25s ease-out both}
+@keyframes floatup{0%{opacity:0;transform:translateY(6px)}15%{opacity:1}100%{opacity:0;transform:translateY(-34px)}}
+.hud{display:flex;align-items:center;gap:8px;font-size:.8rem;color:#f4e9ff;flex-wrap:wrap}
+.hud .lv{font-family:var(--display);font-size:.95rem;background:linear-gradient(180deg,#fffbe0,#ffd25a 55%,#ff8a3a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 6px rgba(255,180,80,.5))}
+.hud .lv b{font-weight:400;font-size:1.25rem}
+.hud .lvname{border:1px solid rgba(255,217,160,.5);border-radius:4px;padding:0 6px;font-weight:700;color:#ffd9a0;background:rgba(255,217,160,.08)}
+.hud .xp{width:120px;height:9px;border-radius:5px;background:rgba(255,255,255,.12);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,217,160,.35)}
+.hud .xp i{display:block;height:100%;background:linear-gradient(90deg,#7a6cff,#ff9ecb,#ffd25a);box-shadow:0 0 10px #ffd25a;transition:width .8s cubic-bezier(.2,.9,.3,1)}
+.hud .xpt{font-variant-numeric:tabular-nums;color:#cdbbe8;font-size:.75rem}
+.stage-count{margin-top:-4px}
+.combo{font-family:var(--display);color:#d9649a;font-size:.8rem;letter-spacing:.04em}
+.combo.bump{animation:bump .4s cubic-bezier(.2,1.8,.4,1)}
+@keyframes bump{0%{transform:scale(1.6)}100%{transform:scale(1)}}
+#stepLabel{font-family:var(--display);letter-spacing:.06em;color:#7a6cff}
+.exp{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1px dashed #d9a54a;border-radius:10px;padding:8px 12px;font-size:.85rem;background:color-mix(in srgb,#ffd25a 10%,var(--surface))}
+.exp b{font-family:var(--display);font-weight:400;color:#c76a12;font-size:1rem}
+@media (prefers-reduced-motion:reduce){.kasumi,.win,.stamp,.spin,.floatup,.combo.bump{animation:none}}
+/* 来場者の画面 */
+.phone{background:linear-gradient(180deg,var(--surface),color-mix(in srgb,var(--surface) 88%,#ffd9a0));box-shadow:0 18px 40px -22px rgba(40,10,80,.45);position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 100% 0,rgba(255,158,203,.22),transparent 260px);pointer-events:none}
+.steps span.on{background:linear-gradient(90deg,#7a6cff,#ff9ecb)}
+.primary{background:linear-gradient(120deg,#4a3fb8,#7a4fc8 55%,#d9649a);color:#fff;box-shadow:0 8px 20px -8px rgba(122,79,200,.7);transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden}
+.primary::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-100%);animation:shine 3.5s ease-in-out infinite}
+@keyframes shine{0%,60%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.primary:active{transform:scale(.97)}
+.agree{border-color:#d9649a;color:#c24f86;position:relative;transition:transform .15s}
+.agree[aria-pressed="true"]{background:linear-gradient(120deg,#ff7eb6,#d9649a);color:#fff;border-color:transparent;box-shadow:0 0 14px rgba(255,126,182,.6)}
+.agree.pop-b{animation:popb .45s cubic-bezier(.2,1.8,.4,1)}
+@keyframes popb{0%{transform:scale(.8)}100%{transform:scale(1)}}
+.spark-dom{position:absolute;width:6px;height:6px;border-radius:50%;pointer-events:none;background:#ff9ecb;box-shadow:0 0 8px #ff9ecb;animation:sd .6s ease-out forwards}
+@keyframes sd{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+#flow>*{animation:rise .45s cubic-bezier(.2,.9,.3,1) both}
+#flow>*:nth-child(2){animation-delay:.05s}#flow>*:nth-child(3){animation-delay:.1s}#flow>*:nth-child(4){animation-delay:.15s}#flow>*:nth-child(5){animation-delay:.2s}#flow>*:nth-child(n+6){animation-delay:.25s}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.voice{background:var(--surface);transition:border-color .2s,box-shadow .2s}
+.voice:hover{border-color:#c9b8f0;box-shadow:0 4px 14px -8px rgba(122,79,200,.5)}
+.card{background:linear-gradient(120deg,color-mix(in srgb,#7a6cff 18%,var(--surface)),color-mix(in srgb,#ff9ecb 18%,var(--surface)))}
+.num b{background:linear-gradient(90deg,#4a3fb8,#d9649a);-webkit-background-clip:text;background-clip:text;color:transparent}
+@media (prefers-reduced-motion:reduce){#flow>*,.primary::after,.agree.pop-b,.spark-dom{animation:none}}
+
+/* ===== 体験版レイアウト ===== */
+body{margin:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ghostbtn{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:6px 14px;font-size:.85rem}
+body[data-mode="answer"] .topbtns,body[data-mode="site"] .topbtns,body[data-mode="admin"] .topbtns{display:none}
+body[data-mode="screen"]{background:#0b0720;color:#f4e9ff}
+body[data-mode="screen"] .wrap{max-width:none;padding-block:12px 16px}
+body[data-mode="screen"] h1{color:#fff}
+body[data-mode="screen"] .sub{color:#cdbbe8}
+body[data-mode="screen"] .ghostbtn{background:transparent;color:#cdbbe8;border-color:#3a2f66}
+.screen{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+@media (max-width:1000px){.screen{grid-template-columns:minmax(0,1fr)}}
+.screenStage .stage{max-width:calc((100vh - 120px)*1.2);margin:0 auto}
+.side{display:flex;flex-direction:column;gap:14px}
+.side .phone{min-height:0}
+.qrcard{background:linear-gradient(160deg,#1d1246,#2a1640);border:1px solid rgba(255,217,160,.35);border-radius:18px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-shadow:0 0 30px -10px rgba(255,180,120,.4)}
+.qrhead{font-family:var(--display);font-size:1.3rem;letter-spacing:.08em;background:linear-gradient(90deg,#fff,#ffd9a0 60%,#ff9ecb);-webkit-background-clip:text;background-clip:text;color:transparent}
+.qrbox{background:#fff;border-radius:12px;padding:8px;width:220px;max-width:70vw;aspect-ratio:1;box-shadow:0 0 0 4px rgba(255,217,160,.5),0 0 30px rgba(255,217,160,.35)}
+.qrbox svg{width:100%;height:100%;display:block}
+.qrnote{margin:0;font-size:.88rem;color:#f4e9ff}
+.qrurl{margin:0;font-size:.72rem;color:#9f8fc8;word-break:break-all}
+.or{width:100%;display:flex;align-items:center;gap:8px;color:#9f8fc8;font-size:.8rem}
+.or::before,.or::after{content:"";flex:1;height:1px;background:#3a2f66}
+.answer{display:flex;justify-content:center}
+.answer .phone{width:100%;max-width:480px;border-radius:22px;min-height:0}
+body[data-mode="answer"] .wrap{padding-block:12px 24px}
+body[data-mode="answer"] h1{font-size:1.25rem}
+.phone .chip{min-height:44px}
+.agree{min-height:40px}
+.phone{color:var(--fg)}
+.screenStage .stage{max-width:calc((100vh - 290px)*1.2)}
+@media (min-width:1001px){.side{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+</style></head><body>
+<div class="wrap">
+  <header class="top">
+    <div><h1>声の木</h1><p class="sub" id="subline">みんなの声が育つ木（京チャレ 体験版）</p></div>
+    <div class="topbtns"><button class="ghostbtn" id="fs" type="button">全画面</button></div>
+  </header>
+  <p class="banner" id="status" hidden></p>
+
+  <section id="view-screen" class="screen" hidden>
+    <div id="screenStage" class="screenStage"></div>
+    <aside id="side" class="side">
+      <div class="qrcard" id="qrCard">
+        <div class="qrhead">スマホで参加</div>
+        <div class="qrbox" id="qr"></div>
+        <p class="qrnote">カメラでQRを読むと、手元で回答できます。<br>答えるとこの木に葉が付きます。</p>
+        <p class="qrurl" id="qrUrl"></p>
+        <div class="or"><span>または</span></div>
+      </div>
+    </aside>
+  </section>
+
+  <section id="view-answer" class="answer" hidden>
+    <div class="phone" id="phone" aria-live="polite">
+      <div class="phone-top"><span>声の木</span><span class="combo" id="combo" hidden></span><span id="stepLabel"></span></div>
+      <div class="steps" id="steps"><span></span><span></span><span></span><span></span></div>
+      <div id="flow"></div>
+    </div>
+  </section>
+
+  <section id="view-site" class="site" hidden>
+    <div class="sitebox" id="siteBody"></div>
+  </section>
+
+  <section id="view-admin" class="admin" hidden>
+    <div id="adminBody" class="admin"></div>
+  </section>
+</div>
+
+<script>window.KN_CONFIG={url:"https://hffdryuznupexlazewez.supabase.co",key:"sb_publishable_r8bkhpdVLVq8vG4EwIq0Lw_XtTkr1xS"};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+/* ============ 定数 ============ */
+const ROLES=[{id:'creator',n:'クリエイター',d:'絵・映像・音楽・ゲームなどをつくる'},{id:'citizen',n:'一般市民',d:''},{id:'both',n:'どちらも',d:''}];
+const ROLE_N=Object.fromEntries(ROLES.map(r=>[r.id,r.n]));
+const AGES=['10代','20代','30代','40代','50代以上'];
+const AREAS=['京都市内','京都府内（市外）','府外'];
+const ACTS=['あり','なし'];
+const BASE_NG=['死ね','殺す','殺せ','バカ','ばか','馬鹿','クズ','くず','きもい','キモい','うざ','ブス','消えろ'];
+const DEFAULT_CFG={question:'京都の若手クリエイターが活動しやすくなるために、何があるといい？',
+  note:'名前や連絡先は聞きません。声は個人がわからない形で、課題を出した人への報告と研究に使います。「はじめる」を押すと同意したことになります。',ng:[]};
+const COLORS=['#5e9e45','#d99a1c','#2f9c96','#c4644a','#7d6bc4','#3f86c9','#b5527c','#8aa33a'];
+const NONE='_none';
+const IDLE_RESET_MS=75000, ATTRACT_MS=45000;
+
+/* ============ 状態 ============ */
+let cfg={...DEFAULT_CFG};
+let branches=[];   // {id,name,order}
+let voices=[];     // {id,n,no,text,branch,role,age,area,act,at,hidden}
+let sessions=[];   // {id,role,at,vA,bA,vI,bI,posted}
+let loaded={cfg:false,branches:false,voices:false,sessions:false};
+let knownVoiceIds=null; // 初回読み込み後に増えた声を「芽吹き」にする
+let view='booth', sel=null, justAdded=new Set(), justLiked=null, bloomQ=[];
+let lastAct=Date.now();
+const mySids=new Set((store('kn_outbox')||[]).map(o=>o.sid)); /* この端末で書いた声は演出済みなので重ねない */
+
+/* 来場者1人分（ブース端末で、はじめる〜次の人へ） */
+let cur=null; // {sid,role,at,vA:Set,bA:Set,vI:Set,bI:Set,posted,order,openBranch,step,mine}
+let step=0;
+
+/* ============ 小道具 ============ */
+const $=id=>document.getElementById(id);
+function mk(tag,attrs={},text){const e=document.createElement(tag);for(const k in attrs){if(k==='class')e.className=attrs[k];else e.setAttribute(k,attrs[k])}if(text!=null)e.textContent=text;return e}
+function hash(str){let h=2166136261;for(const c of String(str)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return (h>>>0)/4294967295}
+function rid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function store(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||'null');localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}}
+function ngList(){return [...BASE_NG,...(cfg.ng||[])].map(s=>String(s).trim()).filter(Boolean)}
+function hasNg(t){const s=t.replace(/\s/g,'');return ngList().some(w=>s.includes(w))}
+function isToday(ts){const d=new Date(ts),n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate()}
+function fmtTime(ts){const d=new Date(ts);return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function setStatus(msg,warn){const s=$('status');if(!msg){s.hidden=true;return}s.hidden=false;s.textContent=msg;s.classList.toggle('warn',!!warn)}
+
+/* ============ 集計（参加記録から数える） ============ */
+let agg=null;
+function aggregate(){
+  const A={v:{},b:{}};
+  const get=(m,id)=>m[id]||(m[id]={creator:0,citizen:0,both:0,total:0,imp:0});
+  const all=[...sessions];
+  if(cur&&cur.role){all.push(serializeSession(cur))} // 自分の操作はすぐ反映
+  const seen=new Set();
+  all.forEach(s=>{
+    if(seen.has(s.id))return;seen.add(s.id);
+    const r=s.role||'citizen';
+    (s.vA||[]).forEach(id=>{const x=get(A.v,id);x[r]=(x[r]||0)+1;x.total++});
+    (s.bA||[]).forEach(id=>{const x=get(A.b,id);x[r]=(x[r]||0)+1;x.total++});
+    (s.vI||[]).forEach(id=>{get(A.v,id).imp++});
+    (s.bI||[]).forEach(id=>{get(A.b,id).imp++});
+  });
+  A.vOf=id=>A.v[id]||{creator:0,citizen:0,both:0,total:0,imp:0};
+  A.bOf=id=>A.b[id]||{creator:0,citizen:0,both:0,total:0,imp:0};
+  agg=A;return A;
+}
+function visibleVoices(){return voices.filter(v=>!v.hidden)}
+function branchIdOf(v){return v.branch&&branches.some(b=>b.id===v.branch)?v.branch:NONE}
+function groups(){
+  const vs=visibleVoices();
+  const g=branches.map((b,i)=>({id:b.id,name:b.name,color:COLORS[i%COLORS.length],vs:vs.filter(v=>branchIdOf(v)===b.id)}));
+  const none=vs.filter(v=>branchIdOf(v)===NONE);
+  if(none.length)g.push({id:NONE,name:'まだ枝のない新しい声',color:'#8fa3bf',vs:none});
+  return g;
+}
+
+/* ============ 木（SVG＋光の粒子） ============ */
+const NS='http://www.w3.org/2000/svg';
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+const stage=mk('div',{class:'stage'});
+stage.innerHTML=`<div class="stage-head"><span class="stage-title">みんなの声が育つ木</span><div class="hud" id="hud"><span class="lv">Lv.<b class="lvnum">1</b></span><span class="lvname">たね</span><span class="xp"><i></i></span><span class="xpt"></span></div></div>
+<div class="stage-count" id="stageCount"></div>
+<p class="stage-q" id="stageQ"></p>
+<div class="scene" id="scene">
+  <svg class="sky" id="sky" viewBox="0 0 600 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+  <svg class="tree" id="tree" viewBox="0 0 600 500" role="img" aria-label="声の木。葉の一枚一枚が来場者の声で、わかるが多いほど大きく光る。枝の名前は、わかるが多いほど大きく表示される"></svg>
+  <svg class="cut" id="cut" viewBox="0 0 600 500" aria-hidden="true"><defs>
+    <filter id="glowBig2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <pattern id="seigaiha" width="24" height="12" patternUnits="userSpaceOnUse"><g fill="none" stroke="#ffd9a0" stroke-width="1"><circle cx="0" cy="12" r="11"/><circle cx="0" cy="12" r="7.5"/><circle cx="0" cy="12" r="4"/><circle cx="24" cy="12" r="11"/><circle cx="24" cy="12" r="7.5"/><circle cx="24" cy="12" r="4"/><circle cx="12" cy="6" r="11" /><circle cx="12" cy="6" r="7.5"/><circle cx="12" cy="6" r="4"/></g></pattern>
+    <linearGradient id="lvG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbe0"/><stop offset=".5" stop-color="#ffd25a"/><stop offset="1" stop-color="#ff8a3a"/></linearGradient>
+    <linearGradient id="textG2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#fff4c8"/><stop offset="1" stop-color="#ffc98a"/></linearGradient></defs></svg>
+  <canvas class="fx" id="fx" aria-hidden="true"></canvas>
+</div>
+<div class="legend" id="legend"></div>
+<div class="caption" id="caption"></div>`;
+
+/* --- 背景：夜明け前の空・星・山並み・月（一度だけ描く） --- */
+(function drawSky(){
+  const s=stage.querySelector('#sky');
+  s.innerHTML=`<defs>
+    <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#070b24"/><stop offset=".38" stop-color="#1a1650"/><stop offset=".66" stop-color="#4a2a6e"/><stop offset=".84" stop-color="#b8577a"/><stop offset="1" stop-color="#f3a76a"/></linearGradient>
+    <radialGradient id="moonG"><stop offset="0" stop-color="#fffbe8"/><stop offset=".55" stop-color="#ffe9b0" stop-opacity=".9"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="haloG"><stop offset="0" stop-color="#ffd9a8" stop-opacity=".55"/><stop offset="1" stop-color="#ffd9a8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="auraG" cx=".5" cy=".62" r=".5"><stop offset="0" stop-color="#9fe8ff" stop-opacity=".28"/><stop offset=".6" stop-color="#7a6cff" stop-opacity=".08"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <linearGradient id="hill1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2457"/><stop offset="1" stop-color="#1b1236"/></linearGradient>
+    <linearGradient id="hill2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#221640"/><stop offset="1" stop-color="#0c0a1f"/></linearGradient>
+    <linearGradient id="rayG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="goldG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffd98a" stop-opacity="0"/><stop offset=".2" stop-color="#ffd36a" stop-opacity=".5"/><stop offset=".8" stop-color="#f5a83a" stop-opacity=".5"/><stop offset="1" stop-color="#f0b45a" stop-opacity="0"/></linearGradient>
+    <linearGradient id="silG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c0f33"/><stop offset="1" stop-color="#0e0820"/></linearGradient>
+  </defs>
+  <rect width="600" height="500" fill="url(#skyG)"/>
+  <g id="stars"></g>
+  <circle cx="488" cy="84" r="70" fill="url(#haloG)"/>
+  <circle cx="488" cy="84" r="24" fill="url(#moonG)"/>
+  <circle cx="497" cy="78" r="20" fill="#2a1d5c" opacity=".25"/>
+  <g class="rays"><path d="M488 84 L180 500 L260 500Z" fill="url(#rayG)"/><path d="M488 84 L330 500 L380 500Z" fill="url(#rayG)" opacity=".7"/></g>
+  <g class="kasumi"><path d="M-40 128 h170 a10 10 0 0 1 0 20 h60 a9 9 0 0 1 0 18 h-150 a9 9 0 0 1 0-18 h-80Z" fill="url(#goldG)"/><path d="M360 196 h200 a10 10 0 0 1 0 20 h-60 a9 9 0 0 1 0 18 h-170 a9 9 0 0 1 0-18 h30 a10 10 0 0 1 0-20Z" fill="url(#goldG)"/></g>
+  <g class="kasumi k2"><path d="M120 250 h220 a9 9 0 0 1 0 18 h-90 a8 8 0 0 1 0 16 h-160 a8 8 0 0 1 0-16 h30 a9 9 0 0 1 0-18Z" fill="url(#goldG)" opacity=".7"/></g>
+  <ellipse cx="300" cy="330" rx="300" ry="230" fill="url(#auraG)"/>
+  <path d="M0 410 C70 372 130 380 190 400 C260 366 330 360 400 392 C470 370 540 372 600 396 L600 500 L0 500Z" fill="url(#hill1)" opacity=".9"/>
+  <g id="kyoto"></g>
+  <path d="M0 448 C90 420 170 430 250 452 C330 432 420 424 600 446 L600 500 L0 500Z" fill="url(#hill2)"/>
+  <g id="town"></g>`;
+  /* 五重塔（左の山） */
+  const ky=s.querySelector('#kyoto');
+  {const x=92,base=398;let d='';
+   for(let k=0;k<5;k++){const w=64-9*k,y=base-24*k-20,bw=w*.5;
+     d+=`M${x-bw/2},${y+2} h${bw} v18 h-${bw}Z `;
+     d+=`M${x-w/2-4},${y-3} Q${x-w/4},${y+1} ${x-w*.2},${y-8} L${x+w*.2},${y-8} Q${x+w/4},${y+1} ${x+w/2+4},${y-3} L${x+w/2-2},${y+3} L${x-w/2+2},${y+3}Z `}
+   const ty=base-24*5-6;d+=`M${x-1.6},${ty-34} h3.2 v36 h-3.2Z`;
+   el('path',{d,fill:'url(#silG)'},ky);
+   for(let k=0;k<9;k++)el('rect',{x:x-4,y:ty-30+k*3.4,width:8,height:1.4,fill:'#1c0f33'},ky);
+   el('path',{d:`M${x+1.6},${ty-34} v36`,stroke:'#ffb48a','stroke-opacity':.5,'stroke-width':.8},ky);
+   for(let k=0;k<5;k++){const w=64-9*k,y=base-24*k-20;el('path',{d:`M${x+w*.2},${y-8} Q${x+w/4},${y+1} ${x+w/2+4},${y-3}`,stroke:'#ffb48a','stroke-opacity':.55,'stroke-width':1,fill:'none'},ky);
+     el('rect',{x:x-3,y:y+7,width:6,height:5,fill:'#ffcf7a',opacity:.85,class:'win'},ky)}}
+  /* 鳥居（右の山） */
+  {const x=528,b=392,g=el('g',{transform:`translate(${x},${b})`},ky);
+   el('path',{d:'M-30,-46 Q0,-41 30,-46 L33,-52 Q0,-46 -33,-52Z',fill:'#c8323a'},g);
+   el('rect',{x:-26,y:-42,width:52,height:4,fill:'#a8262e'},g);
+   el('rect',{x:-24,y:-34,width:48,height:4,fill:'#c8323a'},g);
+   el('rect',{x:-21,y:-42,width:5,height:42,fill:'#c8323a'},g);el('rect',{x:16,y:-42,width:5,height:42,fill:'#c8323a'},g);
+   el('rect',{x:-2,y:-40,width:4,height:7,fill:'#a8262e'},g);
+   el('ellipse',{cx:0,cy:-24,rx:46,ry:30,fill:'#ff6a5a',opacity:.12},g)}
+  /* 町の灯り */
+  {const tw=s.querySelector('#town');let sd2=99;const r2=()=>{sd2=(sd2*16807)%2147483647;return sd2/2147483647};
+   for(let i=0;i<46;i++){const x=r2()*600,y=438+r2()*50;const c=el('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:(.7+r2()*1.4).toFixed(1),fill:r2()<.7?'#ffcf7a':'#ff9a6a',class:'star'},tw);c.style.animationDuration=(2+r2()*4).toFixed(1)+'s';c.style.animationDelay=(-r2()*4).toFixed(1)+'s'}}
+  const st=s.querySelector('#stars');
+  let sd=12345;const rnd=()=>{sd|=0;sd=sd+0x6D2B79F5|0;let t=Math.imul(sd^sd>>>15,1|sd);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+  for(let i=0;i<90;i++){
+    const x=rnd()*600, y=Math.pow(rnd(),1.4)*330, r=.35+Math.pow(rnd(),2)*1.5;
+    const c=el('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:r.toFixed(2),fill:rnd()<.2?'#ffe6b8':'#fff',class:'star'},st);
+    c.style.animationDelay=(-rnd()*4).toFixed(2)+'s';c.style.animationDuration=(2.5+rnd()*3).toFixed(2)+'s';
+  }
+  /* 十字に光る大きな星 */
+  [[110,60],[250,34],[380,130],[60,180]].forEach(([x,y],i)=>{
+    const g=el('g',{class:'twinkle'},el('g',{transform:`translate(${x},${y})`},st));g.style.animationDelay=(-i*1.3)+'s';
+    el('path',{d:'M0,-7 L1,-1 L7,0 L1,1 L0,7 L-1,1 L-7,0 L-1,-1Z',fill:'#fff'},g);
+  });
+})();
+
+/* --- 光の粒子（canvas） --- */
+const fx=stage.querySelector('#fx'), fctx=fx.getContext('2d');
+let parts=[], fxScale=1, fxW=600, fxH=500;
+const sprites={};
+function sprite(color){
+  if(sprites[color])return sprites[color];
+  const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+  const r=g.createRadialGradient(32,32,0,32,32,32);
+  r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.18,color);r.addColorStop(.5,color.replace(/[\d.]+\)$/,'0.25)'));r.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=r;g.fillRect(0,0,64,64);return sprites[color]=c;
+}
+function rgba(hex,a=1){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
+function fitFx(){const r=fx.getBoundingClientRect();if(!r.width)return;const d=Math.min(2,devicePixelRatio||1);fx.width=Math.round(r.width*d);fx.height=Math.round(r.height*d);fxScale=fx.width/600}
+new ResizeObserver(fitFx).observe(fx);
+function spawn(p){if(parts.length<700)parts.push(Object.assign({life:0,vx:0,vy:0,g:0,drag:.985,size:6,color:'rgba(255,240,200,1)',kind:'spark',rot:0,vr:0},p))}
+function burst(x,y,color,n=24,power=3.2){
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=power*(.35+Math.random());
+    spawn({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.6,g:.035,max:40+Math.random()*35,size:4+Math.random()*7,color:rgba(color,1)})}
+  for(let i=0;i<6;i++){const a=Math.random()*Math.PI*2;spawn({x,y,vx:Math.cos(a)*1.2,vy:Math.sin(a)*1.2-1,g:-.01,max:70,size:9,color:'rgba(255,255,255,1)',kind:'star'})}
+}
+function comet(x0,y0,x1,y1,color,onHit){spawn({kind:'comet',x:x0,y:y0,x0,y0,x1,y1,max:55,size:14,color:rgba(color,1),onHit})}
+function ambient(){
+  if(RM)return;
+  if(parts.filter(p=>p.kind==='firefly').length<26)spawn({kind:'firefly',x:Math.random()*600,y:200+Math.random()*290,vx:(Math.random()-.5)*.3,vy:-.15-Math.random()*.3,max:260+Math.random()*200,size:3+Math.random()*5,color:Math.random()<.5?'rgba(180,255,200,1)':'rgba(255,225,150,1)',drag:1,seed:Math.random()*9});
+  if(Math.random()<.045&&parts.filter(p=>p.kind==='petal').length<12){const mo=Math.random()<.5;spawn({kind:'petal',momiji:mo,x:-10+Math.random()*620,y:-10,vx:.4+Math.random()*.6,vy:.5+Math.random()*.5,max:600,size:mo?6+Math.random()*3:5+Math.random()*3,color:mo?['#e8452c','#f07a2a','#d62f3a','#f4a73a'][Math.floor(Math.random()*4)]:(Math.random()<.5?'#ffc4dc':'#ffe3ee'),drag:1,rot:Math.random()*6,vr:(Math.random()-.5)*.08,seed:Math.random()*9})}
+  if(Math.random()<.012&&parts.filter(p=>p.kind==='lantern').length<5)spawn({kind:'lantern',x:40+Math.random()*520,y:505,vx:0,vy:-.22-Math.random()*.15,max:1900,size:7+Math.random()*4,color:'rgba(255,170,90,1)',drag:1,seed:Math.random()*9});
+}
+let fxLast=0;
+function fxLoop(t){
+  requestAnimationFrame(fxLoop);
+  if(!fx.width||document.hidden)return;
+  if(t-fxLast<14)return;fxLast=t;
+  ambient();
+  const S=fxScale;fctx.setTransform(1,0,0,1,0,0);fctx.clearRect(0,0,fx.width,fx.height);
+  fctx.setTransform(S,0,0,S,0,0);
+  const keep=[];
+  for(const p of parts){
+    p.life++;
+    if(p.kind==='comet'){
+      const k=Math.min(1,p.life/p.max),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+      const cx=(p.x0+p.x1)/2+( p.x0<p.x1?-60:60 ), cy=Math.min(p.y0,p.y1)-120;
+      const u=1-e;p.x=u*u*p.x0+2*u*e*cx+e*e*p.x1;p.y=u*u*p.y0+2*u*e*cy+e*e*p.y1;
+      for(let j=0;j<3;j++)spawn({x:p.x+(Math.random()-.5)*6,y:p.y+(Math.random()-.5)*6,vx:(Math.random()-.5)*.6,vy:(Math.random()-.5)*.6,max:26,size:6+Math.random()*6,color:p.color});
+      if(k>=1){p.onHit&&p.onHit();continue}
+    }else if(p.kind==='firefly'){
+      p.x+=p.vx+Math.sin((p.life+p.seed*40)/30)*.35;p.y+=p.vy;
+    }else if(p.kind==='lantern'){
+      p.x+=Math.sin((p.life+p.seed*60)/70)*.25;p.y+=p.vy;
+    }else if(p.kind==='petal'){
+      p.x+=p.vx+Math.sin((p.life+p.seed*50)/40)*.6;p.y+=p.vy;p.rot+=p.vr;
+    }else{p.vx*=p.drag;p.vy=p.vy*p.drag+p.g;p.x+=p.vx;p.y+=p.vy}
+    if(p.life>p.max||p.y>520||p.x<-30||p.x>630)continue;
+    keep.push(p);
+    const k=p.life/p.max;
+    if(p.kind==='petal'){
+      fctx.globalCompositeOperation='source-over';fctx.globalAlpha=Math.min(1,(1-k)*3)*.85;
+      fctx.save();fctx.translate(p.x,p.y);fctx.rotate(p.rot);fctx.scale(1,.55+.45*Math.sin(p.life/12+p.seed));
+      fctx.fillStyle=p.color;fctx.beginPath();
+      if(p.momiji){const r=p.size;for(let j=0;j<10;j++){const a=-Math.PI/2+j*Math.PI/5,rr=j%2?r*.42:r*(j===0?1.1:.95);fctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}fctx.closePath()}
+      else fctx.ellipse(0,0,p.size,p.size*.6,0,0,Math.PI*2);
+      fctx.fill();fctx.restore();continue;
+    }
+    if(p.kind==='lantern'){
+      const a=Math.min(1,p.life/80,(p.max-p.life)/120)*(.85+.15*Math.sin(p.life/7+p.seed));const s2=p.size;
+      fctx.globalCompositeOperation='lighter';fctx.globalAlpha=a*.7;fctx.drawImage(sprite(p.color),p.x-s2*3,p.y-s2*3,s2*6,s2*6);
+      fctx.globalCompositeOperation='source-over';fctx.globalAlpha=a;
+      const gr=fctx.createLinearGradient(p.x-s2*.6,0,p.x+s2*.6,0);gr.addColorStop(0,'#e0602a');gr.addColorStop(.5,'#ffd08a');gr.addColorStop(1,'#e0602a');
+      fctx.fillStyle=gr;fctx.beginPath();fctx.ellipse(p.x,p.y,s2*.62,s2*.85,0,0,Math.PI*2);fctx.fill();
+      fctx.fillStyle='#3a1a1a';fctx.fillRect(p.x-s2*.35,p.y-s2*.95,s2*.7,s2*.22);fctx.fillRect(p.x-s2*.35,p.y+s2*.75,s2*.7,s2*.22);
+      continue;
+    }
+    fctx.globalCompositeOperation='lighter';
+    let a=p.kind==='firefly'?Math.sin(Math.PI*k)*(.55+.45*Math.sin(p.life/9+p.seed)):(1-k);
+    fctx.globalAlpha=Math.max(0,a);
+    const s=p.size*(p.kind==='spark'?(1-k*.5):1);
+    if(p.kind==='star'){
+      fctx.save();fctx.translate(p.x,p.y);fctx.rotate(p.life/20);fctx.fillStyle='#fff';
+      const r=s*(1-k);fctx.beginPath();fctx.moveTo(0,-r);fctx.lineTo(r*.18,-r*.18);fctx.lineTo(r,0);fctx.lineTo(r*.18,r*.18);fctx.lineTo(0,r);fctx.lineTo(-r*.18,r*.18);fctx.lineTo(-r,0);fctx.lineTo(-r*.18,-r*.18);fctx.closePath();fctx.fill();fctx.restore();
+    }
+    fctx.drawImage(sprite(p.color),p.x-s,p.y-s,s*2,s*2);
+  }
+  parts=keep;fctx.globalAlpha=1;fctx.globalCompositeOperation='source-over';
+}
+requestAnimationFrame(fxLoop);
+
+/* --- 木 --- */
+let leafPos={}, branchPos={}, prevLeafIds=null;
+function taper(pts,w0,w1){ /* 曲線に沿って太さが細くなる枝の形 */
+  const L=[],R=[];
+  for(let i=0;i<pts.length;i++){
+    const p=pts[i],q=pts[Math.min(pts.length-1,i+1)],o=pts[Math.max(0,i-1)];
+    const dx=q[0]-o[0],dy=q[1]-o[1],len=Math.hypot(dx,dy)||1,t=i/(pts.length-1),w=(w0+(w1-w0)*t)/2;
+    L.push([p[0]-dy/len*w,p[1]+dx/len*w]);R.push([p[0]+dy/len*w,p[1]-dx/len*w]);
+  }
+  return 'M'+L.map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' L')+' L'+R.reverse().map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' L')+'Z';
+}
+function quad(p0,c,p1,n=18){const a=[];for(let i=0;i<=n;i++){const t=i/n,u=1-t;a.push([u*u*p0[0]+2*u*t*c[0]+t*t*p1[0],u*u*p0[1]+2*u*t*c[1]+t*t*p1[1]])}return a}
+function phase(sec){return `-${((performance.now()/1000)%sec).toFixed(2)}s`}
+function drawTree(){
+  const svg=stage.querySelector('#tree');if(!svg)return;svg.innerHTML='';
+  const A=agg||aggregate();
+  const G=groups();
+  const top=[300,318];
+  const defs=el('defs',{},svg);
+  defs.innerHTML=`<linearGradient id="trunkG" x1="0" x2="1"><stop offset="0" stop-color="#2b1830"/><stop offset=".45" stop-color="#5b3a4a"/><stop offset=".75" stop-color="#8a5a5a"/><stop offset="1" stop-color="#3a2238"/></linearGradient>
+  <linearGradient id="rimG" x1="0" x2="1"><stop offset="0" stop-color="#ffb48a" stop-opacity="0"/><stop offset="1" stop-color="#ffb48a" stop-opacity=".55"/></linearGradient>
+  <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="glowBig" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="soft"><feGaussianBlur stdDeviation="10"/></filter>
+  <linearGradient id="textG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#fff4c8"/><stop offset="1" stop-color="#ffc98a"/></linearGradient>`;
+  G.forEach((g,i)=>{defs.insertAdjacentHTML('beforeend',`<radialGradient id="lf${i}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset=".25" stop-color="${g.color}"/><stop offset="1" stop-color="${g.color}" stop-opacity=".75"/></radialGradient><radialGradient id="cn${i}" cx=".4" cy=".35" r=".65"><stop offset="0" stop-color="${g.color}" stop-opacity=".5"/><stop offset=".7" stop-color="${g.color}" stop-opacity=".22"/><stop offset="1" stop-color="${g.color}" stop-opacity="0"/></radialGradient>`)});
+  /* 地面の光 */
+  el('ellipse',{cx:300,cy:470,rx:190,ry:22,fill:'#ffd59a',opacity:.18,filter:'url(#soft)'},svg);
+  /* 根と幹 */
+  el('path',{d:'M250,486 C275,470 284,452 288,430 M350,486 C326,470 316,452 312,430 M222,490 C258,480 276,470 290,456 M378,490 C342,480 324,470 310,456',stroke:'#3a2238','stroke-width':6,fill:'none','stroke-linecap':'round'},svg);
+  el('path',{d:`M262,492 C280,430 286,380 ${top[0]-8},${top[1]} L${top[0]+8},${top[1]} C314,380 320,430 338,492 Z`,fill:'url(#trunkG)'},svg);
+  el('path',{d:`M${top[0]+8},${top[1]} C314,380 320,430 338,492 L330,492 C312,430 307,384 ${top[0]+4},${top[1]}Z`,fill:'url(#rimG)'},svg);
+  el('path',{d:'M296,470 C298,440 293,410 298,370 M306,452 C309,420 304,400 306,360',stroke:'#2b1830','stroke-width':1.4,fill:'none',opacity:.6},svg);
+  const N=G.length;
+  const aura=el('g',{},svg), bl=el('g',{},svg), ll=el('g',{},svg), lab=el('g',{},svg);
+  if(!N){
+    const t=el('text',{x:300,y:230,'text-anchor':'middle',fill:'#fff','font-size':20,'font-weight':700,filter:'url(#glow)','font-family':'Zen Kaku Gothic New, sans-serif'},svg);
+    t.textContent='最初の一枚を、待っています';
+  }
+  leafPos={};branchPos={};
+  const ids=new Set();
+  G.forEach((g,i)=>{
+    const a=Math.PI+(i+1)/(N+1)*Math.PI;
+    const R=N<=2?190:228;
+    const ex=top[0]+Math.cos(a)*R, ey=Math.max(78,top[1]+Math.sin(a)*R*.95);
+    const cx=(top[0]+ex)/2+(ex<top[0]?20:-20), cy=Math.min(top[1],ey)+(ey<top[1]-120?40:-25);
+    const sway=el('g',{class:'sway'},bl);
+    sway.style.transformOrigin=`${top[0]}px ${top[1]}px`;
+    const per=5+hash(g.id)*3;sway.style.animationDuration=per+'s';sway.style.animationDelay=phase(per);
+    const lsway=el('g',{class:'sway'},ll);lsway.style.cssText=sway.style.cssText;
+    sway.appendChild(el('path',{d:taper(quad([top[0],top[1]+14],[cx,cy],[ex,ey]),15,3),fill:'url(#trunkG)'}));
+    /* 小枝 */
+    [.55,.78].forEach((u,j)=>{const P=quad([top[0],top[1]+14],[cx,cy],[ex,ey])[Math.round(u*18)];const s=j?1:-1;
+      sway.appendChild(el('path',{d:taper(quad(P,[P[0]+s*14,P[1]-22],[P[0]+s*30,P[1]-30],8),5,1),fill:'#4a2e44'}))});
+    const vs=[...g.vs].sort((x,y)=>A.vOf(y.id).total-A.vOf(x.id).total||x.at-y.at);
+    const tot=A.bOf(g.id).total+vs.reduce((s,v)=>s+A.vOf(v.id).total,0);
+    /* 枝先のオーラ */
+    el('circle',{cx:ex.toFixed(1),cy:ey.toFixed(1),r:(26+Math.min(60,8*Math.sqrt(vs.length+tot))).toFixed(1),fill:g.color,opacity:.22,filter:'url(#soft)'},aura);
+    /* 葉の茂み（声が増えるほど大きく） */
+    const cr=22+Math.min(46,9*Math.sqrt(vs.length));
+    for(let j=0;j<7;j++){const a2=j/7*Math.PI*2+hash(g.id+j)*.8,d2=cr*(.35+hash(g.id+'d'+j)*.45);
+      el('circle',{cx:(ex+Math.cos(a2)*d2).toFixed(1),cy:(ey+Math.sin(a2)*d2*.8).toFixed(1),r:(cr*(.45+hash(g.id+'r'+j)*.3)).toFixed(1),fill:`url(#cn${i})`},lsway)}
+    vs.forEach((v,k)=>{
+      ids.add(v.id);
+      const ang=k*2.399+hash(v.id)*.5, rad=k===0?0:16+11*Math.sqrt(k);
+      const lx=ex+Math.cos(ang)*rad, ly=ey+Math.sin(ang)*rad*.85;
+      const likes=A.vOf(v.id).total;
+      const size=Math.min(30,13+4.5*Math.sqrt(likes));
+      leafPos[v.id]={x:lx,y:ly,color:g.color};
+      const outer=el('g',{transform:`translate(${lx.toFixed(1)},${ly.toFixed(1)})`},lsway);
+      const isNew=justAdded.has(v.id)||(prevLeafIds&&!prevLeafIds.has(v.id));
+      const cls='leaf anim'+(isNew?' sprout':'')+(justLiked===v.id?' pulse':'')+(sel===v.id?' sel':'');
+      const gl=el('g',{class:cls,tabindex:0,role:'button','aria-label':v.text},outer);
+      const flut=el('g',{class:'flutter'},gl);const fp=2.4+hash(v.id+'f')*2;flut.style.animationDuration=fp+'s';flut.style.animationDelay=phase(fp);
+      if(likes>0)el('circle',{r:(size*.9).toFixed(1),fill:g.color,opacity:Math.min(.55,.15+likes*.05).toFixed(2),filter:'url(#soft)'},flut);
+      const rot=((ang*57.3)+40)%360;
+      el('path',{d:'M0,-1 C0.62,-0.55 0.62,0.55 0,1 C-0.62,0.55 -0.62,-0.55 0,-1Z',fill:`url(#lf${i})`,stroke:'rgba(255,255,255,.55)','stroke-width':.05,transform:`rotate(${rot.toFixed(0)}) scale(${size.toFixed(1)})`},flut);
+      el('path',{d:'M0,-.85 L0,.85',stroke:'rgba(255,255,255,.55)','stroke-width':.04,transform:`rotate(${rot.toFixed(0)}) scale(${size.toFixed(1)})`},flut);
+      if(v.role==='creator'||v.role==='both')el('circle',{r:2.8,fill:'#ff9ecb',stroke:'#fff','stroke-width':1,filter:'url(#glow)'},flut);
+      const show=()=>{sel=v.id;caption(v);drawTree();burst(lx,ly,g.color,10,1.6)};
+      gl.addEventListener('click',show);gl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();show()}});
+      if(isNew&&prevLeafIds)setTimeout(()=>burst(lx,ly,g.color,30,3.6),300);
+      if(justLiked===v.id){burst(lx,ly,'#ffd6e8',18,2.6);floatText(lx,ly,'わかる＋1','#ffd6e8')}
+    });
+    /* 枝の名前：わかるが多いほど大きく光る */
+    const fs=Math.min(30,14+2.6*Math.sqrt(tot));
+    const ly=ey<top[1]-150?ey-36-fs*.2:ey+42+fs*.3;
+    const tx=Math.min(548,Math.max(52,ex)), ty=Math.min(488,Math.max(22,ly));
+    branchPos[g.id]={x:ex,y:ey,color:g.color};
+    const lg=el('g',{class:'blabel-g'},lab);
+    const t0=el('text',{x:tx.toFixed(1),y:ty.toFixed(1),'text-anchor':'middle',fill:g.color,'font-size':fs.toFixed(1),'font-weight':700,filter:'url(#glowBig)',opacity:.85,'font-family':'Zen Kaku Gothic New, sans-serif'},lg);
+    const t=el('text',{x:tx.toFixed(1),y:ty.toFixed(1),'text-anchor':'middle',fill:'#fff','font-size':fs.toFixed(1),'font-weight':700,class:'blabel','font-family':'Zen Kaku Gothic New, sans-serif',stroke:'rgba(20,10,40,.55)','stroke-width':2.5,'paint-order':'stroke'},lg);
+    t0.textContent=t.textContent=g.name.length>12?g.name.slice(0,12)+'…':g.name;
+    if(justLikedBranch===g.id){burst(ex,ey,g.color,26,3);lg.classList.add('pulse','anim');floatText(ex,ey,'わかる＋1','#fff4c8')}
+  });
+  prevLeafIds=ids;
+  el('g',{id:'attract'},svg);
+  /* 新しい声の演出（アニメのカットイン風） */
+  if(bloomQ.length){
+    const b=bloomQ.shift();bloomAt=Date.now();
+    const layer=el('g',{class:'cutin'},stage.querySelector('#cut'));
+    el('rect',{x:0,y:0,width:600,height:500,fill:'#0a0620',class:'fade'},layer);
+    el('rect',{x:0,y:0,width:600,height:500,fill:'#fff',class:'flash'},layer);
+    const lines=el('g',{class:'speed'},layer);
+    for(let i=0;i<48;i++){const a=i/48*Math.PI*2+hash('sl'+i)*.1,r0=150+hash('r0'+i)*60,r1=420;
+      el('line',{x1:(300+Math.cos(a)*r0).toFixed(1),y1:(240+Math.sin(a)*r0).toFixed(1),x2:(300+Math.cos(a)*r1).toFixed(1),y2:(240+Math.sin(a)*r1).toFixed(1),stroke:i%3?'#fff':'#ffd9a0','stroke-width':(1+hash('w'+i)*3).toFixed(1),opacity:.5},lines)}
+    [0,.18,.36].forEach(d=>{const c=el('circle',{cx:300,cy:240,r:60,fill:'none',stroke:'#fff','stroke-width':3,class:'ring'},layer);c.style.animationDelay=d+'s'});
+    const band=el('g',{class:'band'},layer);
+    el('rect',{x:-20,y:178,width:640,height:150,fill:'#140c34',opacity:.88,transform:'skewY(-4)'},band);
+    el('rect',{x:-20,y:178,width:640,height:150,fill:'url(#seigaiha)',opacity:.16,transform:'skewY(-4)'},band);
+    el('rect',{x:-20,y:178,width:640,height:4,fill:'#ffd9a0',transform:'skewY(-4)'},band);
+    el('rect',{x:-20,y:324,width:640,height:4,fill:'#ffd9a0',transform:'skewY(-4)'},band);
+    const center=el('g',{class:'anim pop'},layer);
+    const sub=el('text',{x:300,y:186,'text-anchor':'middle',fill:'#ffd9a0','font-size':15,'font-weight':700,'letter-spacing':'.2em','font-family':'Zen Kaku Gothic New, sans-serif'},center);
+    sub.textContent=`― ${ROLE_N[b.role]||''}の声が、木に届きました ―`;
+    const ls=[];for(let i=0;i<b.text.length&&ls.length<3;i+=14)ls.push(b.text.slice(i,i+14));
+    const fsz=ls.length>2?30:ls.length>1?36:42, y0=262-(ls.length-1)*(fsz+8)/2;
+    ls.forEach((ln,i)=>{
+      el('text',{x:300,y:(y0+i*(fsz+8)).toFixed(0),'text-anchor':'middle',fill:'#ffb36b','font-size':fsz,filter:'url(#glowBig2)',opacity:.8,'font-family':'Dela Gothic One, sans-serif'},center).textContent=ln;
+      const t=el('text',{x:300,y:(y0+i*(fsz+8)).toFixed(0),'text-anchor':'middle',fill:'url(#textG2)','font-size':fsz,stroke:'#2a1240','stroke-width':3,'paint-order':'stroke','font-family':'Dela Gothic One, sans-serif'},center);t.textContent=ln});
+    const hk=el('g',{transform:'translate(508,318) rotate(-10)'},layer);const hk2=el('g',{class:'stamp'},hk);
+    el('rect',{x:-30,y:-30,width:60,height:60,rx:8,fill:'#c8262c'},hk2);el('rect',{x:-25,y:-25,width:50,height:50,rx:5,fill:'none',stroke:'#fff','stroke-width':2},hk2);
+    el('text',{x:0,y:13,'text-anchor':'middle',fill:'#fff','font-size':36,'font-family':'Dela Gothic One, sans-serif'},hk2).textContent='届';
+    if(!RM){setTimeout(()=>{burst(300,250,'#ffd9a0',50,6);burst(300,250,'#ff9ecb',30,4.5)},260);setTimeout(()=>burst(508,318,'#ff5a5a',24,3),1050)}
+    const target=(G.find(g=>g.id===NONE)&&branchPos[NONE])||{x:300,y:180,color:'#ffd9a0'};
+    setTimeout(()=>{comet(300,250,target.x,target.y,'#ffe3a8',()=>burst(target.x,target.y,target.color,40,4))},RM?0:3900);
+    layer.addEventListener('animationend',e=>{if(e.target===layer)layer.remove()});
+  }
+  justAdded.clear();justLiked=null;justLikedBranch=null;
+  const vs=visibleVoices();
+  const today=vs.filter(v=>isToday(v.at)).length;
+  const likes=vs.reduce((s,v)=>s+A.vOf(v.id).total,0)+G.reduce((s,g)=>s+A.bOf(g.id).total,0);
+  const sc=stage.querySelector('#stageCount');if(sc)sc.textContent=`今日の声 ${today}件 ・ 全部で ${vs.length}件 ・ わかる ${likes}`;
+  const sq=stage.querySelector('#stageQ');if(sq)sq.textContent='問い：'+cfg.question;
+  const lgd=stage.querySelector('#legend');lgd.innerHTML='';
+  G.forEach(g=>{const s=mk('span');s.append(mk('i',{class:'dot',style:`background:${g.color};box-shadow:0 0 8px ${g.color}`}),document.createTextNode(g.name));lgd.appendChild(s)});
+  const s2=mk('span');s2.append(mk('i',{class:'dot',style:'background:#ff9ecb;box-shadow:0 0 8px #ff9ecb'}),document.createTextNode('クリエイターの声'));lgd.appendChild(s2);
+  lgd.appendChild(mk('span',{},'葉の大きさと光＝わかるの数'));
+  if(!sel)caption(null);
+  hud();
+  attract(true);
+}
+let justLikedBranch=null;
+/* ===== ゲーム要素：木のレベル ===== */
+const LV=[{n:'たね',at:0},{n:'芽',at:30},{n:'若木',at:100},{n:'青葉の木',at:250},{n:'大樹',at:500},{n:'御神木',at:1000},{n:'千年樹',at:2000}];
+let prevLv=null, lvQ=[];
+function expNow(){const A=agg||aggregate();const vs=visibleVoices();return vs.length*10+(vs.reduce((s,v)=>s+A.vOf(v.id).total,0)+groups().reduce((s,g)=>s+A.bOf(g.id).total,0))*2}
+function lvOf(exp){let i=0;while(i+1<LV.length&&exp>=LV[i+1].at)i++;return i}
+function hud(){
+  const exp=expNow(),i=lvOf(exp),cur0=LV[i].at,nxt=LV[i+1]?LV[i+1].at:null;
+  const h=stage.querySelector('#hud');if(!h)return;
+  h.querySelector('.lvnum').textContent=i+1;h.querySelector('.lvname').textContent=LV[i].n;
+  h.querySelector('.xp i').style.width=(nxt?Math.round((exp-cur0)/(nxt-cur0)*100):100)+'%';
+  h.querySelector('.xpt').textContent=nxt?`EXP ${exp} / ${nxt}`:`EXP ${exp}（最大）`;
+  if(prevLv!==null&&i>prevLv&&knownVoiceIds!==null){lvQ.push(i);setTimeout(levelUp,bloomBusy()?4800:200)}
+  if(knownVoiceIds!==null)prevLv=i;
+}
+let bloomAt=0;function bloomBusy(){return Date.now()-bloomAt<4600}
+function levelUp(){
+  const i=lvQ.shift();if(i==null)return;
+  const cut=stage.querySelector('#cut');const layer=el('g',{class:'cutin'},cut);
+  el('rect',{x:0,y:0,width:600,height:500,fill:'#1a0a00',class:'fade'},layer);
+  el('rect',{x:0,y:0,width:600,height:500,fill:'#ffe9a0',class:'flash'},layer);
+  const rays=el('g',{class:'spin'},layer);
+  for(let k=0;k<16;k++){const a=k/16*Math.PI*2;el('path',{d:`M300,230 L${300+Math.cos(a-.09)*520},${230+Math.sin(a-.09)*520} L${300+Math.cos(a+.09)*520},${230+Math.sin(a+.09)*520}Z`,fill:'#ffd25a',opacity:.16},rays)}
+  const c=el('g',{class:'anim pop'},layer);
+  el('text',{x:300,y:220,'text-anchor':'middle','font-size':64,fill:'#ff8a3a',filter:'url(#glowBig2)','font-family':'Dela Gothic One, sans-serif',transform:'skewX(-10) translate(40,0)'},c).textContent='LEVEL UP!';
+  el('text',{x:300,y:220,'text-anchor':'middle','font-size':64,fill:'url(#lvG)',stroke:'#3a1200','stroke-width':4,'paint-order':'stroke','font-family':'Dela Gothic One, sans-serif',transform:'skewX(-10) translate(40,0)'},c).textContent='LEVEL UP!';
+  el('text',{x:300,y:275,'text-anchor':'middle','font-size':22,fill:'#fff','font-weight':700,stroke:'#3a1200','stroke-width':3,'paint-order':'stroke','font-family':'Zen Kaku Gothic New, sans-serif'},c).textContent=`Lv.${i+1}　声の木は「${LV[i].n}」に育った！`;
+  if(!RM){[0,250,500].forEach((d,j)=>setTimeout(()=>{burst(300,230,['#ffd25a','#ff8a3a','#fff4c8'][j],60,7)},d))}
+  layer.addEventListener('animationend',e=>{if(e.target===layer)layer.remove()});
+}
+function floatText(x,y,text,color){
+  const cut=stage.querySelector('#cut');if(!cut)return;
+  const t=el('text',{x:x.toFixed(1),y:(y-14).toFixed(1),'text-anchor':'middle','font-size':18,fill:color,stroke:'#1a0a2a','stroke-width':3.5,'paint-order':'stroke','font-family':'Dela Gothic One, sans-serif',class:'floatup'},cut);
+  t.textContent=text;setTimeout(()=>t.remove(),1300);
+}
+function caption(v){
+  const c=stage.querySelector('#caption');if(!c)return;c.innerHTML='';
+  if(!v){c.append(mk('small',{},'葉に触れると声が読めます'),mk('div',{},'葉が大きく光っているほど、たくさんの人が「わかる」と言った声です。'));return}
+  const g=groups().find(g=>g.id===branchIdOf(v));
+  c.append(mk('small',{},`${g?g.name:''} ／ ${ROLE_N[v.role]||''}の声 ／ ${v.no||''}`),mk('div',{},`「${v.text}」 わかる ${(agg||aggregate()).vOf(v.id).total}`));
+}
+
+/* 待機中の演出：木・今日の件数・声の一部を順に */
+let attractI=0;
+function attract(redrawOnly){
+  const g=stage.querySelector('#attract');if(!g)return;
+  const idle=MODE==='screen'&&step===0&&Date.now()-lastAct>ATTRACT_MS;
+  if(!idle){g.innerHTML='';return}
+  if(redrawOnly&&g.childNodes.length)return;
+  g.innerHTML='';
+  const vs=visibleVoices();
+  const box=el('g',{class:'anim attract-in'},g);
+  el('rect',{x:66,y:394,width:468,height:96,rx:18,fill:'#120a2e','fill-opacity':.78,stroke:'#ffd9a0','stroke-opacity':.7,'stroke-width':1.2},box);
+  el('rect',{x:72,y:400,width:456,height:84,rx:14,fill:'none',stroke:'#fff','stroke-opacity':.15},box);
+  const t1=el('text',{x:300,y:418,'text-anchor':'middle',fill:'#ffd9a0','font-size':12.5,'letter-spacing':'.08em','font-family':'Zen Kaku Gothic New, sans-serif'},box);
+  const A=agg||aggregate();
+  if(!vs.length){t1.textContent='今日の声 0件';
+    const t=el('text',{x:300,y:452,'text-anchor':'middle',fill:'#fff','font-size':19,'font-weight':700,filter:'url(#glow)','font-family':'Zen Kaku Gothic New, sans-serif'},box);t.textContent='最初の声を、木に付けてみませんか？';return}
+  const v=[...vs].sort((a,b)=>hash(a.id+attractI)-hash(b.id+attractI))[0];attractI++;
+  t1.textContent=`今日の声 ${vs.filter(x=>isToday(x.at)).length}件　｜　だれかの声（わかる ${A.vOf(v.id).total}）`;
+  const t=el('text',{x:300,y:452,'text-anchor':'middle',fill:'#fff','font-size':v.text.length>24?15:19,'font-weight':700,filter:'url(#glow)','font-family':'Zen Kaku Gothic New, sans-serif'},box);t.textContent=`「${v.text}」`;
+  const t3=el('text',{x:300,y:476,'text-anchor':'middle',fill:'#9fe8ff','font-size':12.5,'font-weight':700,'font-family':'Zen Kaku Gothic New, sans-serif'},box);
+  t3.textContent='「わかる」を押して、あなたの声も一言どうぞ';
+  const p=leafPos[v.id];if(p)burst(p.x,p.y,p.color,14,2);
+}
+setInterval(()=>attract(false),5000);
+setInterval(()=>{ if(MODE==='screen'&&step>0&&Date.now()-lastAct>IDLE_RESET_MS){finishVisitor()} },10000);
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>{
+  const was=Date.now()-lastAct>ATTRACT_MS;lastAct=Date.now();
+  if(was&&view==='booth'){const g=stage.querySelector('#attract');if(g)g.innerHTML=''}
+},true));
+
+/* ============ データ（Supabase：誰でもサインインなしで回答できる） ============ */
+const API=(window.KN_CONFIG||{}).url, KEY=(window.KN_CONFIG||{}).key;
+const MODE=(new URLSearchParams(location.search).get('m')||'screen');
+const VIA=MODE==='answer'?'qr':'touch';
+function hdr(){const h={apikey:KEY,'Content-Type':'application/json'};if(KEY&&KEY.startsWith('ey'))h.Authorization='Bearer '+KEY;return h}
+async function rest(path){const r=await fetch(API+'/rest/v1/'+path,{headers:hdr(),cache:'no-store'});if(!r.ok)throw {code:'http_'+r.status};return r.json()}
+async function rpc(fn,args){const r=await fetch(API+'/rest/v1/rpc/'+fn,{method:'POST',headers:hdr(),body:JSON.stringify(args)});
+  const t=await r.text();if(!r.ok){let m='';try{m=JSON.parse(t).message||''}catch(e){}throw {code:'http_'+r.status,message:m}}return t?JSON.parse(t):null}
+let lastOk=0, loadedOnce=false;
+async function pull(){
+  try{
+    const [c,b,v,s]=await Promise.all([rest('kn_config?select=*'),rest('kn_branches?select=*&order=ord'),rest('kn_voices?select=n,text,branch,role,age,area,act,via,sid,hidden,created_at&order=n'),rest('kn_sessions?select=sid,role,via,started_at,va,ba,vi,bi,posted')]);
+    if(c[0])cfg={...DEFAULT_CFG,question:c[0].question,note:c[0].note,ng:c[0].ng||[]};
+    branches=b.map(x=>({id:x.id,name:x.name,order:x.ord}));
+    voices=v.map(x=>({id:'v'+x.n,n:x.n,no:'こえ-'+x.n,text:x.text,branch:x.branch,role:x.role,age:x.age,area:x.area,act:x.act,via:x.via,sid:x.sid,hidden:x.hidden,at:Date.parse(x.created_at)}));
+    sessions=s.map(x=>({id:x.sid,role:x.role,via:x.via,at:Date.parse(x.started_at),vA:x.va||[],bA:x.ba||[],vI:x.vi||[],bI:x.bi||[],posted:x.posted?('v'+x.posted):null}));
+    if(knownVoiceIds===null)knownVoiceIds=new Set(voices.map(v=>v.id));
+    else voices.forEach(v=>{if(!knownVoiceIds.has(v.id)){knownVoiceIds.add(v.id);justAdded.add(v.id);if(!mySids.has(v.sid)&&!v.hidden)bloomQ.push({text:v.text,role:v.role})}});
+    lastOk=Date.now();loadedOnce=true;setStatus(null);
+    refresh();
+  }catch(e){
+    if(Date.now()-lastOk>12000)setStatus('サーバーにつながっていません。通信を確認してください。書いた声はこの端末に残り、つながると送られます。',true);
+  }
+}
+let db={ok:true};
+
+/* 参加記録（1人1件、変更のたびに上書き） */
+function serializeSession(c){return {id:c.sid,role:c.role,at:c.at,vA:[...c.vA],bA:[...c.bA],vI:[...c.vI],bI:[...c.bI],posted:c.posted||null}}
+const pend=new Map(); let pumping=false, pumpTimer=null;
+function saveSession(){ if(!cur||!cur.role)return; pend.set(cur.sid,serializeSession(cur)); clearTimeout(pumpTimer); pumpTimer=setTimeout(pump,500); }
+async function pump(){
+  if(pumping)return; pumping=true;
+  try{
+    while(pend.size){
+      const [sid,d]=pend.entries().next().value; pend.delete(sid);
+      try{ await rpc('kn_save_session',{p_sid:sid,p_role:d.role,p_via:VIA,p_va:d.vA,p_ba:d.bA,p_vi:d.vI,p_bi:d.bI}); }
+      catch(e){ if(!pend.has(sid))pend.set(sid,d); setTimeout(pump,5000); break; }
+    }
+  } finally { pumping=false; }
+}
+
+/* 声の保存（通信が切れても端末に残して再送） */
+let outbox=store('kn_outbox')||[];
+function saveOutbox(){store('kn_outbox',outbox)}
+let flushing=false;
+async function flushOutbox(){
+  if(flushing||!outbox.length)return; flushing=true;
+  try{
+    for(const item of [...outbox]){
+      try{
+        if(pend.has(item.sid))await pump();
+        const n=await rpc('kn_post_voice',{p_text:item.text,p_role:item.role,p_sid:item.sid,p_via:VIA});
+        outbox=outbox.filter(x=>x.tmp!==item.tmp); saveOutbox(); remember(n);
+        if(item.age||item.area||item.act)rpc('kn_set_attrs',{p_n:n,p_sid:item.sid,p_age:item.age||null,p_area:item.area||null,p_act:item.act||null}).catch(()=>{});
+        if(cur&&cur.mine&&cur.mine.tmp===item.tmp){cur.mine.n=n;cur.posted='v'+n;if(step===4)render()}
+        pull();
+      }catch(e){
+        if(e&&e.message==='ng'){outbox=outbox.filter(x=>x.tmp!==item.tmp);saveOutbox();continue}
+        setTimeout(flushOutbox,6000); break;
+      }
+    }
+  } finally { flushing=false; }
+}
+function remember(n){const m=store('kn_mine')||[];if(!m.includes(n)){m.push(n);store('kn_mine',m.slice(-20))}}
+let attrChain=Promise.resolve();
+function saveAttrs(){
+  const m=cur&&cur.mine;if(!m)return;
+  const ob=outbox.find(x=>x.tmp===m.tmp);
+  if(ob){Object.assign(ob,{age:m.age,area:m.area,act:m.act});saveOutbox();return}
+  if(!m.n)return;
+  const sid=cur.sid,args={p_n:m.n,p_sid:sid,p_age:m.age||null,p_area:m.area||null,p_act:m.act||null};
+  attrChain=attrChain.then(()=>rpc('kn_set_attrs',args)).catch(()=>{});
+}
+let sessionDone=false;
+function domSpark(btn){
+  btn.classList.remove('pop-b');void btn.offsetWidth;btn.classList.add('pop-b');
+  if(RM)return;const r=btn.getBoundingClientRect(),host=btn.closest('.phone'),h=host.getBoundingClientRect();
+  for(let i=0;i<10;i++){const d=mk('i',{class:'spark-dom'});const a=Math.random()*Math.PI*2,v=24+Math.random()*26;
+    d.style.left=(r.left-h.left+r.width/2-3)+'px';d.style.top=(r.top-h.top+r.height/2-3)+'px';d.style.setProperty('--dx',Math.cos(a)*v+'px');d.style.setProperty('--dy',Math.sin(a)*v+'px');
+    if(i%2)d.style.background=d.style.boxShadow='',d.style.background='#ffd9a0';
+    host.appendChild(d);setTimeout(()=>d.remove(),700)}
+}
+/* ============ ブース画面の流れ ============ */
+const flow=$('flow');
+function shuffled(arr,seed){return [...arr].sort((a,b)=>hash(seed+a)-hash(seed+b))}
+function setSteps(){[...document.querySelectorAll('#steps span')].forEach((s,i)=>s.classList.toggle('on',i<step));$('stepLabel').textContent=step?`STAGE ${step} / 4`:'';combo()}
+function combo(bump){const c=$('combo');const n=cur?cur.vA.size+cur.bA.size:0;c.hidden=!(n>0&&step>0);c.textContent=`わかる × ${n}`;if(bump){c.classList.remove('bump');void c.offsetWidth;c.classList.add('bump')}}
+function finishVisitor(){ if(cur&&cur.role)saveSession(); cur=null; step=0; render(); aggregate(); if(MODE==='screen')drawTree(); updSide(); }
+function render(){
+  setSteps(); flow.innerHTML='';
+  if(step===0){
+    if(MODE==='answer'&&sessionDone)flow.append(mk('p',{class:'okmsg'},'ありがとうございました。あなたの声は木に付きました。'));
+    flow.append(mk('h2',{},cfg.question),
+      mk('p',{class:'muted'},'ほかの人の声に「わかる」を押して、自分の声も一言足してください。木が育ちます。1分ほどで終わります。'));
+    const go=mk('button',{class:'primary'},MODE==='screen'?'この画面で参加する':(sessionDone?'もう一度参加する':'はじめる'));
+    go.onclick=()=>{sessionDone=false;cur={sid:'s'+rid(),role:null,at:Date.now(),vA:new Set(),bA:new Set(),vI:new Set(),bI:new Set(),posted:null,openBranch:null,mine:null};step=1;render();updSide()};
+    flow.append(go,mk('p',{class:'muted'},cfg.note));
+    return;
+  }
+  if(step===1){
+    flow.append(mk('h2',{},'あなたは、どちら？'),mk('p',{class:'muted'},'ひとつだけ選んでください。'));
+    const c=mk('div',{class:'chips'});
+    ROLES.forEach(r=>{const b=mk('button',{class:'chip',type:'button'},r.n+(r.d?`（${r.d}）`:''));b.onclick=()=>{cur.role=r.id;step=2;saveSession();render()};c.appendChild(b)});
+    flow.append(c);
+    const back=mk('button',{class:'link'},'やめる');back.onclick=()=>{cur=null;step=0;render()};flow.append(back);
+    return;
+  }
+  if(step===2){
+    const G=groups();
+    if(cur.openBranch===null){
+      flow.append(mk('h2',{},'どの枝に、わかる？'),mk('p',{class:'muted'},'似た声をまとめた「枝」です。枝ごとに「わかる」を押すか、中の声を一つずつ見られます。並び順は人ごとにばらばらです。'));
+      const list=mk('div',{class:'chips'});
+      if(!G.length)list.append(mk('p',{class:'muted'},'まだ声がありません。あなたが最初の一枚です。'));
+      const order=shuffled(G.map(g=>g.id),cur.sid);
+      order.forEach(id=>{
+        const g=G.find(x=>x.id===id);
+        cur.bI.add(g.id);
+        const d=mk('div',{class:'voice'});
+        const tx=mk('div',{class:'txt'});tx.append(mk('span',{class:'tag'},'枝'),mk('b',{},g.name));
+        const open=mk('button',{class:'link'},`中の声を見る（${g.vs.length}件）`);open.onclick=()=>{cur.openBranch=g.id;render()};tx.append(open);
+        const ag=mk('button',{class:'agree','aria-pressed':cur.bA.has(g.id)},'わかる');
+        ag.onclick=()=>{if(cur.bA.has(g.id))cur.bA.delete(g.id);else{cur.bA.add(g.id);justLikedBranch=g.id;domSpark(ag)}ag.setAttribute('aria-pressed',cur.bA.has(g.id));saveSession();aggregate();drawTree();combo(true)};
+        d.append(tx,ag);list.append(d);
+      });
+      saveSession();
+      const next=mk('button',{class:'primary'},'次へ：自分の声を書く');next.onclick=()=>{step=3;render()};
+      const only=mk('button',{class:'link'},'わかるだけ押して終わる');only.onclick=finishVisitor;
+      flow.append(list,next,only);
+      return;
+    }
+    const g=G.find(x=>x.id===cur.openBranch);
+    if(!g){cur.openBranch=null;render();return}
+    flow.append(mk('h2',{},g.name),mk('p',{class:'muted'},'この枝の声すべてです。並び順は人ごとにばらばらにして、先頭の声だけが得をしないようにしています。'));
+    const list=mk('div',{class:'chips'});
+    shuffled(g.vs.map(v=>v.id),cur.sid).forEach(id=>{
+      const v=g.vs.find(x=>x.id===id); cur.vI.add(v.id);
+      const d=mk('div',{class:'voice'});
+      const tx=mk('div',{class:'txt'});tx.append(mk('span',{class:'tag'},(ROLE_N[v.role]||'')+'の声'),document.createTextNode(v.text));
+      const ag=mk('button',{class:'agree','aria-pressed':cur.vA.has(v.id)},'わかる');
+      ag.onclick=()=>{if(cur.vA.has(v.id))cur.vA.delete(v.id);else{cur.vA.add(v.id);justLiked=v.id;domSpark(ag)}ag.setAttribute('aria-pressed',cur.vA.has(v.id));sel=v.id;saveSession();aggregate();drawTree();caption(v);combo(true)};
+      d.append(tx,ag);list.append(d);
+    });
+    saveSession();
+    const back=mk('button',{class:'primary'},'枝の一覧にもどる');back.onclick=()=>{cur.openBranch=null;render()};
+    flow.append(list,back);
+    return;
+  }
+  if(step===3){
+    flow.append(mk('h2',{},'あなたの声を一言どうぞ'),mk('p',{class:'muted'},'問い：'+cfg.question));
+    const lb=mk('label',{class:'muted',for:'voiceText'},'一言（40字まで）');
+    const ta=mk('textarea',{id:'voiceText',maxlength:40,placeholder:'例：夜でも使える作業場所がほしい'});
+    const cnt=mk('div',{class:'count'},'0 / 40');
+    const err=mk('p',{class:'err'});err.hidden=true;
+    const post=mk('button',{class:'primary'},'木に声を足す');post.disabled=true;
+    const check=()=>{cnt.textContent=`${ta.value.length} / 40`;const ng=hasNg(ta.value);err.hidden=!ng;err.textContent=ng?'この言葉は木に付けられません。言い方を変えてみてください。':'';post.disabled=ng||ta.value.trim().length<2};
+    ta.addEventListener('input',check);
+    post.onclick=()=>{
+      const text=ta.value.trim().slice(0,40);
+      if(hasNg(text)){check();return}
+      const item={tmp:'t'+rid(),text,role:cur.role,at:Date.now(),sid:cur.sid,n:null};pump();
+      outbox.push(item);saveOutbox();
+      cur.mine={tmp:item.tmp,text,n:null,age:null,area:null,act:null};
+      bloomQ.push({text,role:cur.role});mySids.add(cur.sid);
+      step=4;render();drawTree();flushOutbox();
+    };
+    const back=mk('button',{class:'link'},'戻る');back.onclick=()=>{step=2;render()};
+    flow.append(lb,ta,cnt,err,post,back);
+    if(MODE!=='answer')setTimeout(()=>ta.focus({preventScroll:true}),50);
+    return;
+  }
+  if(step===4){
+    const m=cur.mine;
+    flow.append(mk('h2',{},'あなたの声が木に付きました'));
+    const card=mk('div',{class:'card'});
+    const num=mk('div',{class:'num'});num.append(mk('small',{},'声の番号'),mk('b',{},m.n?('こえ-'+m.n):'発行中…'));
+    card.append(num,mk('div',{},`「${m.text}」`));
+    flow.append(card);
+    {const e=expNow(),i=lvOf(e);const ex=mk('div',{class:'exp'});ex.append(mk('b',{},`EXP ＋${10+2*(cur.vA.size+cur.bA.size)}`),mk('span',{},`声の木 Lv.${i+1}「${LV[i].n}」に貢献しました`));flow.append(ex)}
+    if(!m.n)flow.append(mk('p',{class:'muted'},'通信を待っています。このまま「次の人へ」に進んでも、声はこの端末に残り、つながったときに保存されます。'));
+    flow.append(mk('p',{class:'muted'},'番号を控えるか、フライヤーに書いてください。あとで「声の木サイト」に番号を入れると、この声がどう育ったか見られます。'));
+    flow.append(mk('div',{class:'q-label'},'よければ、もう少しだけ（任意）'));
+    const rowOf=(label,opts,key)=>{const ql=mk('div',{class:'q-label'});ql.append(mk('span',{},label));flow.append(ql);const r=mk('div',{class:'row'});
+      opts.forEach(o=>{const b=mk('button',{class:'chip',type:'button','aria-pressed':m[key]===o},o);b.onclick=()=>{m[key]=m[key]===o?null:o;[...r.children].forEach(x=>x.setAttribute('aria-pressed',x.textContent===m[key]));saveAttrs()};r.append(b)});flow.append(r)};
+    rowOf('年代',AGES,'age');rowOf('住まい',AREAS,'area');rowOf('この1年で、地域の活動やボランティアに参加した？',ACTS,'act');
+    if(MODE==='answer'){
+      flow.append(mk('p',{class:'muted'},'前のスクリーンを見てください。あなたの声が木に付いています。'));
+      const done=mk('button',{class:'primary'},'おわる');done.onclick=()=>{sessionDone=true;finishVisitor()};flow.append(done);
+      if(m.n){const a=mk('a',{class:'link',href:'?m=site&n='+m.n},'この声のその後を見る');flow.append(a)}
+    }else{const done=mk('button',{class:'primary'},'次の人へ');done.onclick=finishVisitor;flow.append(done)}
+  }
+}
+
+/* ============ 声の木サイト（後日） ============ */
+let siteNo=null;
+function renderSite(){
+  const b=$('siteBody');b.innerHTML='';
+  b.append(mk('h2',{},'あなたの声は、どう育った？'));
+  const lk=mk('div',{class:'lookup'});
+  const inp=mk('input',{type:'search',inputmode:'numeric',placeholder:'声の番号（例：123）','aria-label':'声の番号'});
+  if(siteNo)inp.value=siteNo;
+  const go=mk('button',{class:'secondary'},'見る');
+  const run=()=>{const n=parseInt(String(inp.value).replace(/[^0-9０-９]/g,'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)),10);siteNo=isNaN(n)?null:n;renderSite()};
+  go.onclick=run;inp.addEventListener('keydown',e=>{if(e.key==='Enter')run()});
+  lk.append(mk('span',{class:'muted'},'こえ-'),inp,go);b.append(lk);
+  const mine=(store('kn_mine')||[]).slice().reverse();
+  if(mine.length&&!siteNo){
+    const p=mk('div',{class:'mini'});p.append(mk('b',{},'この端末で書いた声'));const r=mk('div',{class:'row',style:'margin-top:6px'});
+    mine.slice(0,8).forEach(n=>{const c=mk('button',{class:'chip',type:'button'},'こえ-'+n);c.onclick=()=>{siteNo=n;renderSite()};r.append(c)});p.append(r);b.append(p);
+  }
+  if(!siteNo){b.append(mk('p',{class:'muted'},'ブースでもらった声の番号を入れてください。'));return}
+  const v=voices.find(x=>x.n===siteNo);
+  if(!v){b.append(mk('p',{class:'err'},'その番号の声は見つかりませんでした。'));return}
+  if(v.hidden){b.append(mk('p',{class:'muted'},'この声は、いまは表示を止めています。'));return}
+  const A=agg||aggregate();const s=A.vOf(v.id);
+  const g=groups().find(x=>x.id===branchIdOf(v));
+  const m1=mk('div',{class:'mini'});m1.append(mk('span',{class:'muted'},`${v.no}・${ROLE_N[v.role]||''}の声`),mk('div',{},`「${v.text}」`));b.append(m1);
+  const big=mk('div');big.append(mk('div',{class:'big'},`わかる ${s.total}`),mk('div',{class:'muted'},`クリエイター ${s.creator}人・一般市民 ${s.citizen}人・どちらも ${s.both}人（${s.imp}人の画面に表示）`));b.append(big);
+  if(g){
+    const sib=g.vs.filter(x=>x.id!==v.id).sort((a,c)=>A.vOf(c.id).total-A.vOf(a.id).total);
+    const m2=mk('div',{class:'mini'});m2.append(mk('b',{},`同じ枝「${g.name}」の声`),mk('div',{class:'muted'},`あなたを含めて${g.vs.length}件の声があります。`));
+    const ul=mk('ul');sib.slice(0,5).forEach(x=>ul.append(mk('li',{},`${x.text}（わかる ${A.vOf(x.id).total}）`)));if(sib.length)m2.append(ul);b.append(m2);
+  }
+  const back=mk('button',{class:'link'},'ほかの番号を見る');back.onclick=()=>{siteNo=null;renderSite()};b.append(back);
+}
+
+/* ============ 主催者画面（合言葉つき） ============ */
+let adminPass=null; try{adminPass=sessionStorage.getItem('kn_pass')}catch(e){}
+async function adm(op,args={}){return rpc('kn_admin',{p_pass:adminPass,p_op:op,p_args:args})}
+function renderAdmin(){
+  const box=$('adminBody');if(!box)return;
+  if(!adminPass){
+    if(box.dataset.mode==='login')return;box.dataset.mode='login';box.innerHTML='';
+    const p=mk('div',{class:'panel'});p.append(mk('h2',{},'主催者の合言葉'));
+    const inp=mk('input',{type:'text',placeholder:'合言葉','aria-label':'合言葉',autocomplete:'off'});const go=mk('button',{class:'secondary'},'入る');const msg=mk('p',{class:'err'});
+    go.onclick=async()=>{adminPass=inp.value.trim();try{await adm('check');try{sessionStorage.setItem('kn_pass',adminPass)}catch(e){}box.dataset.mode='';renderAdmin()}catch(e){adminPass=null;msg.textContent='合言葉がちがいます'}};
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')go.click()});
+    const r=mk('div',{class:'brow'});r.append(inp,go);p.append(r,msg);box.append(p);return;
+  }
+  if(box.contains(document.activeElement)&&document.activeElement.tagName!=='BUTTON')return;
+  box.dataset.mode='admin';box.innerHTML='';
+  const A=aggregate();
+  /* 状況 */
+  const ss=sessions;const posted=ss.filter(s=>s.posted).length;
+  const agrees=ss.reduce((s,x)=>s+(x.vA||[]).length+(x.bA||[]).length,0);
+  const p1=mk('div',{class:'panel'});p1.append(mk('h2',{},'いまの状況'));
+  const k=mk('div',{class:'kpis'});
+  [[ss.length,'参加した人'],[ss.filter(s=>s.via==='qr').length,'うちQRから'],[ss.filter(s=>s.via==='touch').length,'うちタッチ画面から'],[posted,'声を足した人'],[voices.length,'声（非表示含む）'],[agrees,'押された「わかる」'],
+   ...['creator','citizen','both'].map(r=>[ss.filter(s=>s.role===r).length,'立場：'+ROLE_N[r]])]
+   .forEach(([v,l])=>{const d=mk('div',{class:'kpi'});d.append(mk('b',{},String(v)),mk('span',{},l));k.append(d)});
+  p1.append(k);
+  const rs=mk('button',{class:'link'},'デモの声と参加記録をすべて消す');
+  rs.onclick=async()=>{if(!rs.dataset.c){rs.dataset.c=1;rs.textContent='本当に消す（元に戻せません）';return}await adm('reset_all');knownVoiceIds=null;pull()};
+  p1.append(rs);box.append(p1);
+  /* 問い */
+  const p2=mk('div',{class:'panel'});p2.append(mk('h2',{},'問いとNGワード'));
+  const q=mk('textarea',{maxlength:120,'aria-label':'問い'});q.value=cfg.question;
+  const ng=mk('textarea',{'aria-label':'NGワード',placeholder:'追加のNGワード（1行に1つ）'});ng.value=(cfg.ng||[]).join('\n');
+  const sv=mk('button',{class:'secondary'},'保存する');const sm=mk('span',{class:'muted'});
+  sv.onclick=async()=>{try{await adm('set_config',{question:q.value,ng:ng.value.split(/\n|,|、/).map(s=>s.trim()).filter(Boolean)});sm.textContent='保存しました';pull()}catch(e){sm.textContent='保存できませんでした'}};
+  const r2=mk('div',{class:'brow'});r2.append(sv,sm);
+  p2.append(mk('div',{class:'q-label'},'その回の問い'),q,mk('div',{class:'q-label'},'NGワード（標準の言葉に加えて）'),ng,r2);box.append(p2);
+  /* 枝 */
+  const p3=mk('div',{class:'panel'});p3.append(mk('h2',{},'枝（似た声のまとまり）'),mk('p',{class:'muted',style:'margin:0'},'名前を変えたり、声を振り分けたりすると、スクリーンの木にすぐ反映されます。'));
+  branches.forEach((b,i)=>{const r=mk('div',{class:'brow'});r.append(mk('i',{class:'dot',style:`background:${COLORS[i%COLORS.length]}`}));
+    const inp=mk('input',{type:'text',maxlength:24,'aria-label':'枝の名前'});inp.value=b.name;inp.addEventListener('change',()=>adm('rename_branch',{id:b.id,name:inp.value}).then(pull));
+    const del=mk('button',{class:'link'},'消す');del.onclick=()=>{if(!del.dataset.c){del.dataset.c=1;del.textContent='本当に消す';return}adm('delete_branch',{id:b.id}).then(pull)};
+    r.append(inp,mk('span',{class:'muted'},`声${voices.filter(v=>v.branch===b.id&&!v.hidden).length}`),del);p3.append(r)});
+  const nb=mk('input',{type:'text',maxlength:24,placeholder:'新しい枝の名前'});const ab=mk('button',{class:'secondary'},'枝を足す');
+  ab.onclick=()=>{if(nb.value.trim())adm('add_branch',{name:nb.value}).then(pull)};
+  const r3=mk('div',{class:'brow'});r3.append(nb,ab);p3.append(r3);box.append(p3);
+  /* 声 */
+  const p4=mk('div',{class:'panel'});p4.append(mk('h2',{},'声の一覧'));
+  const tw=mk('div',{class:'tablewrap'});const tb=mk('table');
+  tb.innerHTML='<thead><tr><th>番号</th><th>声</th><th>立場</th><th>経路</th><th>枝</th><th>わかる</th><th>表示</th><th></th></tr></thead>';
+  const body=mk('tbody');
+  [...voices].sort((a,b)=>b.n-a.n).forEach(v=>{const s=A.vOf(v.id);const tr=mk('tr',{class:v.hidden?'hid':''});
+    tr.append(mk('td',{class:'n'},v.no),mk('td',{},v.text),mk('td',{},ROLE_N[v.role]||''),mk('td',{},v.via==='touch'?'タッチ':'QR'));
+    const td=mk('td');const sl=mk('select',{'aria-label':'枝'});[['','（枝なし）'],...branches.map(b=>[b.id,b.name])].forEach(([id,n])=>sl.append(mk('option',{value:id},n)));
+    sl.value=v.branch&&branches.some(b=>b.id===v.branch)?v.branch:'';sl.onchange=()=>adm('set_voice',{n:v.n,branch:sl.value,hidden:v.hidden}).then(pull);td.append(sl);tr.append(td);
+    tr.append(mk('td',{class:'n'},String(s.total)),mk('td',{class:'n'},String(s.imp)));
+    const th=mk('td');const hb=mk('button',{class:'link'},v.hidden?'表示に戻す':'非表示');hb.onclick=()=>adm('set_voice',{n:v.n,branch:v.branch||'',hidden:!v.hidden}).then(pull);th.append(hb);tr.append(th);
+    body.append(tr)});
+  if(!voices.length){const tr=mk('tr');tr.append(mk('td',{colspan:8,class:'muted'},'まだ声はありません'));body.append(tr)}
+  tb.append(body);tw.append(tb);p4.append(tw);box.append(p4);
+  const out=mk('button',{class:'link'},'合言葉を忘れてログアウト');out.onclick=()=>{adminPass=null;try{sessionStorage.removeItem('kn_pass')}catch(e){};box.dataset.mode='';renderAdmin()};box.append(out);
+}
+
+/* ============ 画面の組み立て ============ */
+function answerUrl(){return location.origin+location.pathname+'?m=answer'}
+function drawQr(){
+  const q=$('qr');if(!q)return;
+  if(typeof qrcode!=='function'){q.textContent='QRを読み込めませんでした';return}
+  const qq=qrcode(0,'M');qq.addData(answerUrl());qq.make();q.innerHTML=qq.createSvgTag({cellSize:5,margin:2,scalable:true});
+  $('qrUrl').textContent=answerUrl().replace(/^https?:\/\//,'');
+}
+let redrawT=null;
+function refresh(){clearTimeout(redrawT);redrawT=setTimeout(()=>{aggregate();if(MODE==='screen')drawTree();if(MODE==='site')renderSite();if(MODE==='admin')renderAdmin();if(step===0)render();updSide()},120)}
+function updSide(){const qc=$('qrCard');if(qc)qc.hidden=step>0}
+function setup(){
+  document.body.dataset.mode=MODE;
+  ['screen','answer','site','admin'].forEach(m=>{const e=$('view-'+m);if(e)e.hidden=m!==MODE});
+  if(MODE==='site')$('subline').textContent='あなたの声は、どう育った？';if(MODE==='admin')$('subline').textContent='主催者画面';
+  view=MODE==='screen'?'booth':MODE;
+  if(MODE==='screen'){$('screenStage').appendChild(stage);$('side').appendChild($('phone'));$('view-answer').hidden=true;drawQr();
+    $('fs').onclick=()=>{try{const r=document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();if(r&&r.catch)r.catch(()=>{})}catch(e){}};}
+  if(MODE==='site'){const n=parseInt(new URLSearchParams(location.search).get('n')||'',10);if(!isNaN(n))siteNo=n}
+  if(!API||!KEY){setStatus('サーバーの設定がまだです（KN_CONFIG）。',true);return}
+  render();pull();flushOutbox();
+  setInterval(pull,MODE==='screen'?2500:MODE==='admin'?4000:6000);
+  setInterval(flushOutbox,10000);
+  window.addEventListener('online',()=>{pull();flushOutbox();pump()});
+}
+setup();
+
+</script>
+</body></html>
