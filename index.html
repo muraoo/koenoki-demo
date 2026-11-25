@@ -1034,7 +1034,7 @@ function renderAdmin(){
 function answerUrl(){return location.origin+location.pathname+'?m=answer'}
 function drawQr(){
   const q=$('qr');if(!q)return;
-  if(typeof qrcode!=='function'){q.textContent='QRを読み込めませんでした';return}
+  if(typeof qrcode!=='function'){q.innerHTML='<img src="qr_answer.png" alt="回答ページのQR" style="width:100%;height:100%;image-rendering:pixelated">';$('qrUrl').textContent=answerUrl().replace(/^https?:\/\//,'');return}
   const qq=qrcode(0,'M');qq.addData(answerUrl());qq.make();q.innerHTML=qq.createSvgTag({cellSize:5,margin:2,scalable:true});
   $('qrUrl').textContent=answerUrl().replace(/^https?:\/\//,'');
 }
