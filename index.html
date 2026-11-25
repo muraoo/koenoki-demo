@@ -757,8 +757,8 @@ async function pull(){
     const [c,b,v,s]=await Promise.all([rest('kn_config?select=*'),rest('kn_branches?select=*&order=ord'),rest('kn_voices?select=n,text,branch,role,age,area,act,via,sid,hidden,created_at&order=n'),rest('kn_sessions?select=sid,role,via,started_at,va,ba,vi,bi,posted')]);
     if(c[0])cfg={...DEFAULT_CFG,question:c[0].question,note:c[0].note,ng:c[0].ng||[]};
     branches=b.map(x=>({id:x.id,name:x.name,order:x.ord}));
-    voices=v.map(x=>({id:'v'+x.n,n:x.n,no:'こえ-'+x.n,text:x.text,branch:x.branch,role:x.role,age:x.age,area:x.area,act:x.act,via:x.via,sid:x.sid,hidden:x.hidden,at:Date.parse(x.created_at)}));
-    sessions=s.map(x=>({id:x.sid,role:x.role,via:x.via,at:Date.parse(x.started_at),vA:x.va||[],bA:x.ba||[],vI:x.vi||[],bI:x.bi||[],posted:x.posted?('v'+x.posted):null}));
+    voices=v.map(x=>({id:'v'+x.n,n:x.n,no:'こえ-'+x.n,text:x.text,branch:x.branch,role:x.role,age:x.age,area:x.area,act:x.act,via:x.via,sid:x.sid,hidden:x.hidden,at:Date.parse(x.created_at),sample:/^sample/.test(x.sid)}));
+    sessions=s.map(x=>({id:x.sid,role:x.role,via:x.via,at:Date.parse(x.started_at),vA:x.va||[],bA:x.ba||[],vI:x.vi||[],bI:x.bi||[],posted:x.posted?('v'+x.posted):null,sample:/^sample/.test(x.sid)}));
     if(knownVoiceIds===null)knownVoiceIds=new Set(voices.map(v=>v.id));
     else voices.forEach(v=>{if(!knownVoiceIds.has(v.id)){knownVoiceIds.add(v.id);justAdded.add(v.id);if(!mySids.has(v.sid)&&!v.hidden)bloomQ.push({text:v.text,role:v.role})}});
     lastOk=Date.now();loadedOnce=true;setStatus(null);
@@ -993,9 +993,14 @@ function renderAdmin(){
    ...['creator','citizen','both'].map(r=>[ss.filter(s=>s.role===r).length,'立場：'+ROLE_N[r]])]
    .forEach(([v,l])=>{const d=mk('div',{class:'kpi'});d.append(mk('b',{},String(v)),mk('span',{},l));k.append(d)});
   p1.append(k);
-  const rs=mk('button',{class:'link'},'デモの声と参加記録をすべて消す');
-  rs.onclick=async()=>{if(!rs.dataset.c){rs.dataset.c=1;rs.textContent='本当に消す（元に戻せません）';return}await adm('reset_all');knownVoiceIds=null;pull()};
-  p1.append(rs);box.append(p1);
+  const sv_=voices.filter(v=>v.sample).length,ss_=ss.filter(s=>s.sample).length;
+  p1.append(mk('p',{class:'muted',style:'margin:.6em 0 .2em'},`うちサンプル（デモ用のダミー）：声${sv_}件・参加${ss_}人。本物の回答：声${voices.length-sv_}件・参加${ss.length-ss_}人。`));
+  const dangerBtn=(label,op,confirmText)=>{const b=mk('button',{class:'link'},label);b.onclick=async()=>{if(!b.dataset.c){b.dataset.c=1;b.textContent=confirmText;return}
+    try{await adm(op);knownVoiceIds=null;pull()}catch(e){b.textContent='できませんでした（サーバーの設定がまだかもしれません）'}};return b};
+  const br=mk('div',{class:'brow',style:'flex-wrap:wrap;gap:.4em 1.2em'});
+  br.append(dangerBtn('サンプルを入れ直す','seed_samples','本当に入れ直す'),dangerBtn('サンプルだけ消す','clear_samples','本当に消す（本物の回答は残ります）'),
+    dangerBtn('本物の回答だけ消す','clear_real','本当に消す（元に戻せません）'),dangerBtn('すべて消す','reset_all','本当にすべて消す（元に戻せません）'));
+  p1.append(br);box.append(p1);
   /* 問い */
   const p2=mk('div',{class:'panel'});p2.append(mk('h2',{},'問いとNGワード'));
   const q=mk('textarea',{maxlength:120,'aria-label':'問い'});q.value=cfg.question;
@@ -1019,7 +1024,7 @@ function renderAdmin(){
   tb.innerHTML='<thead><tr><th>番号</th><th>声</th><th>立場</th><th>経路</th><th>枝</th><th>わかる</th><th>表示</th><th></th></tr></thead>';
   const body=mk('tbody');
   [...voices].sort((a,b)=>b.n-a.n).forEach(v=>{const s=A.vOf(v.id);const tr=mk('tr',{class:v.hidden?'hid':''});
-    tr.append(mk('td',{class:'n'},v.no),mk('td',{},v.text),mk('td',{},ROLE_N[v.role]||''),mk('td',{},v.via==='touch'?'タッチ':'QR'));
+    tr.append(mk('td',{class:'n'},v.no),mk('td',{},v.sample?'［サンプル］'+v.text:v.text),mk('td',{},ROLE_N[v.role]||''),mk('td',{},v.via==='touch'?'タッチ':'QR'));
     const td=mk('td');const sl=mk('select',{'aria-label':'枝'});[['','（枝なし）'],...branches.map(b=>[b.id,b.name])].forEach(([id,n])=>sl.append(mk('option',{value:id},n)));
     sl.value=v.branch&&branches.some(b=>b.id===v.branch)?v.branch:'';sl.onchange=()=>adm('set_voice',{n:v.n,branch:sl.value,hidden:v.hidden}).then(pull);td.append(sl);tr.append(td);
     tr.append(mk('td',{class:'n'},String(s.total)),mk('td',{class:'n'},String(s.imp)));
