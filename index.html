@@ -362,6 +362,20 @@ body:not(.tate)[data-mode="screen"] .qrnote{font-size:.8rem}
 body:not(.tate)[data-mode="screen"] .side .phone{padding:14px 16px}
 body:not(.tate)[data-mode="screen"] .side .phone h2{font-size:1.05rem;margin:.3em 0}
 body.tate[data-mode="screen"] .stage .scene{aspect-ratio:auto;width:100%;align-self:stretch;flex:1 1 0;min-height:0;max-height:calc(var(--W) - 64px)}
+/* 声カード：木の絵と同じ縮尺（--u＝絵の1単位）で、横に広がらず真ん中に */
+.scene{--u:1px}
+.lcard{left:0;right:0;margin:0 auto;width:calc(var(--u)*560);max-width:94%;box-sizing:border-box;bottom:calc(var(--u)*10);max-height:none;padding:calc(var(--u)*9) calc(var(--u)*13);gap:calc(var(--u)*5);border-radius:calc(var(--u)*12)}
+.lcard .lhead{gap:calc(var(--u)*8);padding-right:calc(var(--u)*30)}
+.lcard .ltag{font-size:calc(var(--u)*9.5);padding:calc(var(--u)*1.5) calc(var(--u)*8)}
+.lcard .lmeta{font-size:calc(var(--u)*9.5)}
+.lcard .lx{width:calc(var(--u)*30);height:calc(var(--u)*30);min-width:0;min-height:0;font-size:calc(var(--u)*17);top:calc(var(--u)*3);right:calc(var(--u)*4)}
+.lcard .lbody{gap:calc(var(--u)*12)}
+.lcard .ltext{font-size:calc(var(--u)*16)}
+.lcard .lstage{font-size:calc(var(--u)*9.5);gap:0 calc(var(--u)*8)}
+.lcard .lstage b{font-size:calc(var(--u)*12)}
+.lcard .lbtns{width:calc(var(--u)*130);gap:calc(var(--u)*5)}
+.lcard .lwk{min-height:calc(var(--u)*34);font-size:calc(var(--u)*14);padding:0 calc(var(--u)*6)}
+.lcard .lnext{min-height:calc(var(--u)*22);font-size:calc(var(--u)*9.5)}
 </style></head><body>
 <div class="wrap">
   <header class="top">
@@ -573,7 +587,7 @@ function sprite(color){
   g.fillStyle=r;g.fillRect(0,0,64,64);return sprites[color]=c;
 }
 function rgba(hex,a=1){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
-function fitFx(){const r=fx.getBoundingClientRect();if(!r.width)return;const d=Math.min(2,devicePixelRatio||1);fx.width=Math.round(r.width*d);fx.height=Math.round(r.height*d);fxScale=Math.min(fx.width/600,fx.height/500);fxOX=(fx.width-600*fxScale)/2;fxOY=(fx.height-500*fxScale)/2;fxL=-fxOX/fxScale;fxR=600+fxOX/fxScale}
+function fitFx(){const r=fx.getBoundingClientRect();if(!r.width)return;const d=Math.min(2,devicePixelRatio||1);fx.width=Math.round(r.width*d);fx.height=Math.round(r.height*d);fxScale=Math.min(fx.width/600,fx.height/500);fxOX=(fx.width-600*fxScale)/2;fxOY=(fx.height-500*fxScale)/2;fxL=-fxOX/fxScale;fxR=600+fxOX/fxScale;const sc=fx.parentNode;if(sc)sc.style.setProperty('--u',Math.min(r.width/600,r.height/500).toFixed(3)+'px')}
 new ResizeObserver(fitFx).observe(fx);
 function spawn(p){if(parts.length<700)parts.push(Object.assign({life:0,vx:0,vy:0,g:0,drag:.985,size:6,color:'rgba(255,240,200,1)',kind:'spark',rot:0,vr:0},p))}
 function burst(x,y,color,n=24,power=3.2){
