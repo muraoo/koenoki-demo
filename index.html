@@ -287,6 +287,21 @@ body[data-mode="answer"] h1{font-size:1.25rem}
 .lcard .lstage b{font-size:1rem}
 .lcard .lwk{flex:none;align-self:center;width:clamp(120px,26%,220px);min-height:52px;font-size:1.1rem;letter-spacing:.06em;padding:0 12px}
 .lcard.done .lwk:disabled{background:linear-gradient(90deg,#4caf6e,#8fd18f);color:#0d2a14;box-shadow:0 0 20px rgba(140,220,140,.5)}
+/* 下の声カード：シーンの幅に合わせて文字を縮める */
+.scene{container-type:inline-size}
+.lcard{padding:1.4cqw 2cqw;gap:.8cqw;max-height:30%}
+.lcard .lhead{gap:1.4cqw;padding-right:5cqw}
+.lcard .ltag{font-size:max(9px,1.5cqw);padding:.2cqw 1.4cqw}
+.lcard .lmeta{font-size:max(9px,1.5cqw)}
+.lcard .lx{width:5.5cqw;height:5.5cqw;min-width:28px;min-height:28px;font-size:max(14px,2.6cqw);top:.4cqw;right:.6cqw}
+.lcard .lbody{gap:2cqw}
+.lcard .ltext{font-size:max(12px,2.6cqw);line-height:1.35}
+.lcard .lstage{font-size:max(9px,1.5cqw);gap:0 1.4cqw}
+.lcard .lstage b{font-size:max(11px,2cqw)}
+.lcard .lbtns{flex:none;display:flex;flex-direction:column;gap:.8cqw;width:clamp(96px,22cqw,240px)}
+.lcard .lwk{width:100%;min-height:max(32px,6cqw);font-size:max(12px,2.2cqw);letter-spacing:.04em;padding:0 1cqw;white-space:nowrap}
+.lcard .lnext{width:100%;min-height:max(24px,3.8cqw);font-size:max(10px,1.5cqw);border:1px solid rgba(255,217,160,.5);background:rgba(255,255,255,.06);color:#f4e9ff;border-radius:999px;cursor:pointer;white-space:nowrap}
+.lcard .lnext:hover{background:rgba(255,255,255,.14)}
 </style></head><body>
 <div class="wrap">
   <header class="top">
@@ -709,7 +724,7 @@ function drawTree(){
   G.forEach(g=>{const s=mk('span');s.append(mk('i',{class:'dot',style:`background:${g.color};box-shadow:0 0 8px ${g.color}`}),document.createTextNode(g.name));lgd.appendChild(s)});
   const s2=mk('span');s2.append(mk('i',{class:'dot',style:'background:#ff9ecb;box-shadow:0 0 8px #ff9ecb'}),document.createTextNode('クリエイターの声'));lgd.appendChild(s2);
   lgd.appendChild(mk('span',{},'「わかる」が集まると　葉→つぼみ→花→満開'));
-  caption(null);if(MODE==='screen'&&!card&&visibleVoices().length)setTimeout(()=>{if(!card)nextSuggest()},0);
+  caption(null);if(MODE==='screen'&&!card&&Date.now()>=restUntil&&visibleVoices().length)setTimeout(()=>{if(!card)nextSuggest()},0);
   hud();
   attract(true);
 }
@@ -915,18 +930,20 @@ let nextBloom={}, raiseQ=[];
 function raiseFlowers(){raiseQ.sort((a,b)=>a.likes-b.likes).forEach(x=>x.o.parentNode&&x.o.parentNode.appendChild(x.o));raiseQ=[]}
 
 /* ===== 下の声カード：自動で入れ替わる「こんな声も」＋触れた声。どちらも「わかる」を押せる ===== */
-const SUGGEST_MS=9000, PICK_MS=16000, AFTER_TAP_MS=4500;
+const SUGGEST_MS=9000, PICK_MS=16000, AFTER_TAP_MS=4500, REST_MS=20000;
 let card=null, cardV=null, cardMode=null, cardTimer=null, tapCool={}, sugHist=[];
 function ensureCard(){
   if(card&&card.isConnected)return card;
   const scene=stage.querySelector('#scene');if(!scene)return null;
   card=mk('div',{class:'lcard',role:'region','aria-live':'polite','aria-label':'声'});
   const head=mk('div',{class:'lhead'});head.append(mk('span',{class:'ltag'}),mk('span',{class:'lmeta'}));
-  const x=mk('button',{class:'lx','aria-label':'閉じて次の声へ'},'×');x.onclick=()=>nextSuggest();
+  const x=mk('button',{class:'lx','aria-label':'閉じる（しばらく木全体を見せる）'},'×');x.onclick=()=>restCard();
   const body=mk('div',{class:'lbody'});
   const left=mk('div',{class:'lleft'});left.append(mk('div',{class:'ltext'}),mk('div',{class:'lstage'}));
   const btn=mk('button',{class:'lwk'});btn.onclick=()=>tapAgree(cardV);
-  body.append(left,btn);card.append(x,head,body);
+  const nx=mk('button',{class:'lnext'},'ほかの声を見る');nx.onclick=()=>nextSuggest();
+  const btns=mk('div',{class:'lbtns'});btns.append(btn,nx);
+  body.append(left,btns);card.append(x,head,body);
   card.addEventListener('pointerdown',()=>{if(cardMode==='suggest')schedule(PICK_MS)});
   scene.appendChild(card);return card;
 }
@@ -942,6 +959,7 @@ function showVoice(v,mode){
 }
 function nextSuggest(){
   if(MODE!=='screen')return;
+  if(Date.now()<restUntil){schedule(restUntil-Date.now()+50);return}
   const vs=visibleVoices();
   if(!vs.length){if(card){card.remove();card=null;cardV=null}schedule(5000);return}
   let pool=vs.filter(v=>v.id!==cardV&&!sugHist.includes(v.id));if(!pool.length)pool=vs.filter(v=>v.id!==cardV);if(!pool.length)pool=vs;
@@ -949,8 +967,10 @@ function nextSuggest(){
   sugHist.push(v.id);if(sugHist.length>Math.min(12,Math.floor(vs.length/2)))sugHist.shift();
   showVoice(v,'suggest');
 }
-function openCard(v){showVoice(v,'pick')}
-function closeCard(){nextSuggest()}
+let restUntil=0;
+function restCard(){restUntil=Date.now()+REST_MS;if(card){card.remove();card=null;cardV=null;cardMode=null}drawTree();schedule(REST_MS)}
+function openCard(v){restUntil=0;showVoice(v,'pick')}
+function closeCard(){restCard()}
 function updCard(){
   if(!card)return;
   const v=voices.find(x=>x.id===cardV);if(!v||v.hidden){nextSuggest();return}
