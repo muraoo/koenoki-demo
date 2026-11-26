@@ -353,6 +353,15 @@ body.tate[data-mode="screen"] .stage .scene{flex:1 1 0;min-height:0;width:auto;m
 body.tate[data-mode="screen"] .side{height:30vh;max-height:30vh;overflow:hidden}
 body.tate[data-mode="screen"] .side>*{overflow:auto;max-height:100%;box-sizing:border-box}
 body.tate[data-mode="screen"] .qrbox{width:auto;height:min(16vh,calc(var(--W)*.3));max-width:100%}
+/* 横長：木の絵を枠いっぱいに広げる */
+body:not(.tate)[data-mode="screen"] .stage .scene{aspect-ratio:auto;width:100%;align-self:stretch;flex:1 1 0;min-height:0}
+/* 横長：右の列が画面の高さに収まるように */
+body:not(.tate)[data-mode="screen"] .qrbox{width:min(200px,15vw,22vh)}
+body:not(.tate)[data-mode="screen"] .qrcard{padding:10px 12px;gap:4px}
+body:not(.tate)[data-mode="screen"] .qrnote{font-size:.8rem}
+body:not(.tate)[data-mode="screen"] .side .phone{padding:14px 16px}
+body:not(.tate)[data-mode="screen"] .side .phone h2{font-size:1.05rem;margin:.3em 0}
+body.tate[data-mode="screen"] .stage .scene{aspect-ratio:auto;width:100%;align-self:stretch;flex:1 1 0;min-height:0;max-height:calc(var(--W) - 64px)}
 </style></head><body>
 <div class="wrap">
   <header class="top">
@@ -475,7 +484,7 @@ stage.innerHTML=`<div class="stage-head"><span class="stage-title">みんなの�
 <div class="stage-count" id="stageCount"></div>
 <p class="stage-q" id="stageQ"></p>
 <div class="scene" id="scene">
-  <svg class="sky" id="sky" viewBox="0 0 600 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+  <svg class="sky" id="sky" viewBox="0 0 600 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
   <svg class="tree" id="tree" viewBox="0 0 600 500" role="img" aria-label="声の木。葉の一枚一枚が来場者の声で、わかるが多いほど大きく光る。枝の名前は、わかるが多いほど大きく表示される"></svg>
   <svg class="cut" id="cut" viewBox="0 0 600 500" aria-hidden="true"><defs>
     <filter id="glowBig2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
@@ -554,7 +563,7 @@ stage.innerHTML=`<div class="stage-head"><span class="stage-title">みんなの�
 
 /* --- 光の粒子（canvas） --- */
 const fx=stage.querySelector('#fx'), fctx=fx.getContext('2d');
-let parts=[], fxScale=1, fxW=600, fxH=500;
+let fxOX=0,fxOY=0,fxL=0,fxR=600;let parts=[], fxScale=1, fxW=600, fxH=500;
 const sprites={};
 function sprite(color){
   if(sprites[color])return sprites[color];
@@ -564,7 +573,7 @@ function sprite(color){
   g.fillStyle=r;g.fillRect(0,0,64,64);return sprites[color]=c;
 }
 function rgba(hex,a=1){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
-function fitFx(){const r=fx.getBoundingClientRect();if(!r.width)return;const d=Math.min(2,devicePixelRatio||1);fx.width=Math.round(r.width*d);fx.height=Math.round(r.height*d);fxScale=fx.width/600}
+function fitFx(){const r=fx.getBoundingClientRect();if(!r.width)return;const d=Math.min(2,devicePixelRatio||1);fx.width=Math.round(r.width*d);fx.height=Math.round(r.height*d);fxScale=Math.min(fx.width/600,fx.height/500);fxOX=(fx.width-600*fxScale)/2;fxOY=(fx.height-500*fxScale)/2;fxL=-fxOX/fxScale;fxR=600+fxOX/fxScale}
 new ResizeObserver(fitFx).observe(fx);
 function spawn(p){if(parts.length<700)parts.push(Object.assign({life:0,vx:0,vy:0,g:0,drag:.985,size:6,color:'rgba(255,240,200,1)',kind:'spark',rot:0,vr:0},p))}
 function burst(x,y,color,n=24,power=3.2){
@@ -575,8 +584,8 @@ function burst(x,y,color,n=24,power=3.2){
 function comet(x0,y0,x1,y1,color,onHit){spawn({kind:'comet',x:x0,y:y0,x0,y0,x1,y1,max:55,size:14,color:rgba(color,1),onHit})}
 function ambient(){
   if(RM)return;
-  if(parts.filter(p=>p.kind==='firefly').length<26)spawn({kind:'firefly',x:Math.random()*600,y:200+Math.random()*290,vx:(Math.random()-.5)*.3,vy:-.15-Math.random()*.3,max:260+Math.random()*200,size:3+Math.random()*5,color:Math.random()<.5?'rgba(180,255,200,1)':'rgba(255,225,150,1)',drag:1,seed:Math.random()*9});
-  if(Math.random()<.045&&parts.filter(p=>p.kind==='petal').length<12){const mo=Math.random()<.5;spawn({kind:'petal',momiji:mo,x:-10+Math.random()*620,y:-10,vx:.4+Math.random()*.6,vy:.5+Math.random()*.5,max:600,size:mo?6+Math.random()*3:5+Math.random()*3,color:mo?['#e8452c','#f07a2a','#d62f3a','#f4a73a'][Math.floor(Math.random()*4)]:(Math.random()<.5?'#ffc4dc':'#ffe3ee'),drag:1,rot:Math.random()*6,vr:(Math.random()-.5)*.08,seed:Math.random()*9})}
+  if(parts.filter(p=>p.kind==='firefly').length<26)spawn({kind:'firefly',x:fxL+Math.random()*(fxR-fxL),y:200+Math.random()*290,vx:(Math.random()-.5)*.3,vy:-.15-Math.random()*.3,max:260+Math.random()*200,size:3+Math.random()*5,color:Math.random()<.5?'rgba(180,255,200,1)':'rgba(255,225,150,1)',drag:1,seed:Math.random()*9});
+  if(Math.random()<.045&&parts.filter(p=>p.kind==='petal').length<12){const mo=Math.random()<.5;spawn({kind:'petal',momiji:mo,x:fxL-10+Math.random()*(fxR-fxL+20),y:-10,vx:.4+Math.random()*.6,vy:.5+Math.random()*.5,max:600,size:mo?6+Math.random()*3:5+Math.random()*3,color:mo?['#e8452c','#f07a2a','#d62f3a','#f4a73a'][Math.floor(Math.random()*4)]:(Math.random()<.5?'#ffc4dc':'#ffe3ee'),drag:1,rot:Math.random()*6,vr:(Math.random()-.5)*.08,seed:Math.random()*9})}
   if(Math.random()<.012&&parts.filter(p=>p.kind==='lantern').length<5)spawn({kind:'lantern',x:40+Math.random()*520,y:505,vx:0,vy:-.22-Math.random()*.15,max:1900,size:7+Math.random()*4,color:'rgba(255,170,90,1)',drag:1,seed:Math.random()*9});
 }
 let fxLast=0;
@@ -586,7 +595,7 @@ function fxLoop(t){
   if(t-fxLast<14)return;fxLast=t;
   ambient();
   const S=fxScale;fctx.setTransform(1,0,0,1,0,0);fctx.clearRect(0,0,fx.width,fx.height);
-  fctx.setTransform(S,0,0,S,0,0);
+  fctx.setTransform(S,0,0,S,fxOX,fxOY);
   const keep=[];
   for(const p of parts){
     p.life++;
