@@ -320,23 +320,39 @@ body[data-mode="screen"] .side{position:static;max-height:none;min-height:0;over
 body[data-mode="screen"] .qrcard{padding:12px;gap:6px}
 body[data-mode="screen"] .qrbox{width:min(220px,18vw,26vh)}
 /* 縦長のサイネージ：木を上、QRと回答を下に並べる */
-@media (orientation:portrait){
-  body[data-mode="screen"] .screen{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
-  body[data-mode="screen"] .side{flex-direction:row;align-items:stretch;max-height:42vh}
-  body[data-mode="screen"] .side>*{flex:1;min-width:0}
-  body[data-mode="screen"] .qrbox{width:min(240px,30vw,22vh)}
-  body[data-mode="screen"] .poplist{flex-direction:column}
-}
-@media (orientation:portrait){body[data-mode="screen"] .stage .scene{flex:none;width:100%;max-height:calc(100% - 160px)}}
-@media (orientation:portrait){
-  body[data-mode="screen"] .screen{grid-template-rows:auto minmax(0,1fr)}
-  body[data-mode="screen"] .stage .scene{max-height:none}
-  body[data-mode="screen"] .side{max-height:none}
-  body[data-mode="screen"] .qrbox{width:min(300px,34vw,24vh)}
-}
+
+  body.tate[data-mode="screen"] .screen{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+  body.tate[data-mode="screen"] .side{flex-direction:row;align-items:stretch;max-height:42vh}
+  body.tate[data-mode="screen"] .side>*{flex:1;min-width:0}
+  body.tate[data-mode="screen"] .qrbox{width:min(240px,calc(30*var(--W)/100),22vh)}
+  body.tate[data-mode="screen"] .poplist{flex-direction:column}
+
+
+body.tate[data-mode="screen"] .stage .scene{flex:none;width:100%;max-height:calc(100% - 160px)}
+
+
+  body.tate[data-mode="screen"] .screen{grid-template-rows:auto minmax(0,1fr)}
+  body.tate[data-mode="screen"] .stage .scene{max-height:none}
+  body.tate[data-mode="screen"] .side{max-height:none}
+  body.tate[data-mode="screen"] .qrbox{width:min(300px,calc(34*var(--W)/100),24vh)}
+
+
 body[data-mode="screen"] .stage-q{font-size:clamp(.85rem,1.05vw,1.35rem)}
 body[data-mode="screen"] .stage-count{font-size:clamp(.75rem,.85vw,1.05rem)}
-@media (orientation:portrait){body[data-mode="screen"] .stage-q{font-size:clamp(.85rem,1.9vw,1.6rem)}body[data-mode="screen"] .legend,body[data-mode="screen"] .caption{font-size:clamp(.75rem,1.5vw,1.2rem)}}
+body.tate[data-mode="screen"] .stage-q{font-size:clamp(.85rem,calc(1.9*var(--W)/100),1.6rem)}body.tate[data-mode="screen"] .legend,body.tate[data-mode="screen"] .caption{font-size:clamp(.75rem,calc(1.5*var(--W)/100),1.2rem)}
+
+
+body.tate{--W:100vw}
+body.tate.forced{--W:calc(100vh*9/16)}
+body.tate.forced[data-mode="screen"] .wrap{width:calc(100vh*9/16);margin:0 auto;border-left:1px solid #2a2050;border-right:1px solid #2a2050}
+body.tate[data-mode="screen"] .side .phone{overflow:auto}
+/* 縦長：木は幅いっぱい、下のQR・回答欄は高さを抑える */
+body.tate[data-mode="screen"] .screen{grid-template-rows:minmax(0,1fr) auto}
+body.tate[data-mode="screen"] .screenStage .stage{min-height:0}
+body.tate[data-mode="screen"] .stage .scene{flex:1 1 0;min-height:0;width:auto;max-width:100%;max-height:calc((var(--W) - 64px)*5/6);align-self:center}
+body.tate[data-mode="screen"] .side{height:30vh;max-height:30vh;overflow:hidden}
+body.tate[data-mode="screen"] .side>*{overflow:auto;max-height:100%;box-sizing:border-box}
+body.tate[data-mode="screen"] .qrbox{width:auto;height:min(16vh,calc(var(--W)*.3));max-width:100%}
 </style></head><body>
 <div class="wrap">
   <header class="top">
@@ -1271,6 +1287,12 @@ function refresh(){clearTimeout(redrawT);redrawT=setTimeout(()=>{aggregate();if(
 function updSide(){const qc=$('qrCard');if(qc)qc.hidden=step>0}
 function setup(){
   document.body.dataset.mode=MODE;
+  {const q=new URLSearchParams(location.search).get('tate');const mq=matchMedia('(orientation:portrait)');
+   const ap=()=>{const forced=q==='1';document.body.classList.toggle('tate',forced||(q!=='0'&&mq.matches));document.body.classList.toggle('forced',forced&&!mq.matches);
+     if(MODE==='screen'){const t=document.body.classList.contains('tate'),H=innerHeight,W=document.body.classList.contains('forced')?H*9/16:innerWidth;
+       document.documentElement.style.fontSize=Math.max(13,t?Math.min(W/68,H/120):Math.min(W/120,H/68)).toFixed(1)+'px'}
+     try{fitFx()}catch(e){}};
+   ap();mq.addEventListener('change',ap);addEventListener('resize',ap);}
   ['screen','answer','site','admin'].forEach(m=>{const e=$('view-'+m);if(e)e.hidden=m!==MODE});
   if(MODE==='site')$('subline').textContent='あなたの声は、どう育った？';if(MODE==='admin')$('subline').textContent='主催者画面';
   view=MODE==='screen'?'booth':MODE;
